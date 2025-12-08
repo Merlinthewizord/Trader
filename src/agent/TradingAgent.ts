@@ -134,11 +134,13 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
           ? await this.pumpFun.buyToken({
               tokenMint: decision.tokenMint,
               amount: decision.amount,
+              denominatedInSol: true, // Buy with SOL
               slippage: this.config.slippageBPS,
             })
           : await this.pumpFun.sellToken({
               tokenMint: decision.tokenMint,
               amount: decision.amount,
+              denominatedInSol: true, // Sell for SOL
               slippage: this.config.slippageBPS,
             });
 
@@ -187,10 +189,14 @@ ${memoriesSection}
 
 Top Trending Tokens:
 ${tokens.map((t, i) => `${i + 1}. ${t.symbol} (${t.name})
-   - Market Cap: $${t.marketCap.toLocaleString()}
-   - 24h Volume: $${t.volume24h.toLocaleString()}
-   - 24h Change: ${t.priceChange24h.toFixed(2)}%
-   - Holders: ${t.holders}`).join('\n\n')}
+   - Mint: ${t.id}
+   - Price: $${t.usdPrice?.toFixed(6) || 'N/A'}
+   - Market Cap: $${t.mcap?.toLocaleString() || 'N/A'}
+   - 24h Volume: $${t.stats24h?.volume?.toLocaleString() || 'N/A'}
+   - 24h Change: ${t.stats24h?.priceChange?.toFixed(2) || 'N/A'}%
+   - Holders: ${t.holderCount?.toLocaleString() || 'N/A'}
+   - Organic Score: ${t.organicScore?.toFixed(1) || 'N/A'} (${t.organicScoreLabel || 'N/A'})
+   - Verified: ${t.isVerified ? 'Yes' : 'No'}`).join('\n\n')}
 
 Analyze these tokens and decide if you should:
 1. BUY a specific token (provide which one and how much SOL to spend)

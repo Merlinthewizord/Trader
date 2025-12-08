@@ -20,9 +20,13 @@ async function main() {
   const balance = await wallet.getBalance();
   console.log(`💰 Current Balance: ${balance.toFixed(4)} SOL\n`);
 
-  // Initialize pump.fun client
-  const pumpFunUrl = process.env.PUMPFUN_API_URL || 'https://api.pump.fun';
-  const pumpFun = new PumpFunClient(pumpFunUrl, wallet);
+  // Initialize pump.fun client with Jupiter API integration
+  const priorityFee = parseFloat(process.env.PRIORITY_FEE || '0.00001');
+  const pool = process.env.POOL || 'auto';
+  const jupiterApiKey = process.env.JUPITER_API_KEY;
+  const pumpFun = new PumpFunClient(wallet, priorityFee, pool, jupiterApiKey);
+  console.log(`⚡ PumpPortal client initialized (priority fee: ${priorityFee}, pool: ${pool})`);
+  console.log(`🪐 Jupiter API ${jupiterApiKey ? 'enabled' : 'disabled (public access)'}\n`);
 
   // Initialize memory service
   const mem0Key = process.env.MEM0_API_KEY;

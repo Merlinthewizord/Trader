@@ -7,7 +7,8 @@ An AI-powered trading agent for Solana blockchain integrated with pump.fun. Feat
 - **AI-Powered Trading**: Uses Claude (Anthropic) to analyze markets and make intelligent trading decisions
 - **Persistent Memory**: Powered by Mem0 - the agent learns from every trade to improve over time
 - **Solana Wallet Integration**: Complete wallet management with balance tracking
-- **Pump.fun Integration**: Trade tokens on the pump.fun platform
+- **PumpPortal Trading API**: Execute trades via PumpPortal's local trading API
+- **Jupiter Token Discovery**: Real-time token data, trending tokens, and market intelligence
 - **Real-Time Terminal Interface**: Split-screen terminal UI showing:
   - Live chat with the AI agent
   - Wallet balance and address
@@ -71,8 +72,9 @@ ANTHROPIC_API_KEY=your_anthropic_api_key_here
 # Mem0 API (for agent memory)
 MEM0_API_KEY=your_mem0_api_key_here
 
-# Pump.fun Configuration
-PUMPFUN_API_URL=https://api.pump.fun
+# PumpPortal Trading Configuration
+PRIORITY_FEE=0.00001
+POOL=auto
 
 # Trading Configuration
 MAX_TRADE_AMOUNT_SOL=0.1
@@ -121,6 +123,21 @@ The Mem0 service enables persistent memory, allowing the agent to:
 - Learn from successful and failed strategies
 - Retrieve relevant historical context when analyzing new opportunities
 - Continuously improve decision-making over time
+
+### Jupiter API Key (Optional)
+
+1. Sign up at [Jupiter Portal](https://portal.jup.ag/)
+2. Create an API key for enhanced rate limits
+3. Add to `.env` as `JUPITER_API_KEY` (leave empty for public access)
+
+The Jupiter API provides:
+- **Real-time token data**: Prices, market cap, volume, and holder counts
+- **Trending tokens**: Top organic score tokens (filters out bot activity)
+- **Token search**: Find tokens by symbol, name, or mint address
+- **Verified tokens**: Access to Jupiter's community-verified token list
+- **Organic scoring**: Quality metrics to identify genuine vs. bot-driven tokens
+
+**Note**: Jupiter API works without a key (public access with rate limits). An API key provides higher rate limits and priority access.
 
 ## Usage
 
