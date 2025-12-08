@@ -5,6 +5,7 @@ An AI-powered trading agent for Solana blockchain integrated with pump.fun. Feat
 ## Features
 
 - **AI-Powered Trading**: Uses Claude (Anthropic) to analyze markets and make intelligent trading decisions
+- **Persistent Memory**: Powered by Mem0 - the agent learns from every trade to improve over time
 - **Solana Wallet Integration**: Complete wallet management with balance tracking
 - **Pump.fun Integration**: Trade tokens on the pump.fun platform
 - **Real-Time Terminal Interface**: Split-screen terminal UI showing:
@@ -14,6 +15,7 @@ An AI-powered trading agent for Solana blockchain integrated with pump.fun. Feat
   - Recent transaction history
 - **WebSocket Communication**: Real-time updates for trades and wallet changes
 - **Configurable Risk Management**: Set trading limits and risk tolerance
+- **Learning from Experience**: Agent remembers past trades, outcomes, and lessons learned
 
 ## Architecture
 
@@ -21,6 +23,8 @@ An AI-powered trading agent for Solana blockchain integrated with pump.fun. Feat
 src/
 ├── agent/
 │   └── TradingAgent.ts      # AI agent with Claude integration
+├── memory/
+│   └── MemoryService.ts     # Mem0 integration for learning
 ├── wallet/
 │   └── SolanaWallet.ts      # Solana wallet management
 ├── trading/
@@ -40,6 +44,7 @@ public/
 - Node.js 18+ and npm
 - Solana wallet with private key (mainnet or devnet)
 - Anthropic API key
+- Mem0 API key
 - SOL tokens for trading
 
 ## Installation
@@ -62,6 +67,9 @@ SOLANA_PRIVATE_KEY=your_base58_private_key_here
 
 # Anthropic API
 ANTHROPIC_API_KEY=your_anthropic_api_key_here
+
+# Mem0 API (for agent memory)
+MEM0_API_KEY=your_mem0_api_key_here
 
 # Pump.fun Configuration
 PUMPFUN_API_URL=https://api.pump.fun
@@ -100,6 +108,19 @@ On first run without a private key, a new wallet will be generated and printed t
 2. Navigate to API Keys
 3. Create a new API key
 4. Copy and add to `.env`
+
+### Mem0 API Key
+
+1. Sign up at [mem0.ai](https://mem0.ai)
+2. Navigate to your dashboard
+3. Create or copy your API key
+4. Add to `.env` as `MEM0_API_KEY`
+
+The Mem0 service enables persistent memory, allowing the agent to:
+- Remember all past trades and their outcomes
+- Learn from successful and failed strategies
+- Retrieve relevant historical context when analyzing new opportunities
+- Continuously improve decision-making over time
 
 ## Usage
 
@@ -153,6 +174,31 @@ The agent will provide trade decisions showing:
 - **Risk Level**: Low, Medium, or High
 
 To execute, the agent can automatically trade based on its analysis.
+
+### 4. Memory & Learning
+
+The agent uses Mem0 to maintain persistent memory across sessions:
+
+**What Gets Stored:**
+- Every trade decision (buy/sell/hold) with full reasoning
+- Trade outcomes (success/failure) and profit/loss
+- Lessons learned from each trade
+- Market conditions and token performance
+
+**How It Learns:**
+- When analyzing markets, the agent retrieves relevant past experiences
+- Successful strategies are reinforced; failed ones are avoided
+- Token-specific lessons inform future trades of similar assets
+- Trading statistics (win rate, total trades) guide risk assessment
+
+**Example Learning:**
+```
+Past Trade: "Bought TOKEN_X at high volume, but price dropped 20%"
+Lesson: "High volume alone isn't enough; check holder distribution"
+Future: Agent considers holder metrics when evaluating similar tokens
+```
+
+The more the agent trades, the smarter it becomes!
 
 ## Configuration
 

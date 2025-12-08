@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import { SolanaWallet } from './wallet/SolanaWallet';
 import { PumpFunClient } from './trading/PumpFunClient';
 import { TradingAgent, AgentConfig } from './agent/TradingAgent';
+import { MemoryService } from './memory/MemoryService';
 import { WebServer } from './server/WebServer';
 
 dotenv.config();
@@ -23,6 +24,16 @@ async function main() {
   const pumpFunUrl = process.env.PUMPFUN_API_URL || 'https://api.pump.fun';
   const pumpFun = new PumpFunClient(pumpFunUrl, wallet);
 
+  // Initialize memory service
+  const mem0Key = process.env.MEM0_API_KEY;
+  if (!mem0Key) {
+    console.error('❌ MEM0_API_KEY not found in environment variables');
+    process.exit(1);
+  }
+
+  const memory = new MemoryService(mem0Key);
+  console.log(`🧠 Memory service initialized\n`);
+
   // Initialize trading agent
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   if (!anthropicKey) {
@@ -37,7 +48,7 @@ async function main() {
     riskTolerance: (process.env.RISK_TOLERANCE as any) || 'moderate',
   };
 
-  const agent = new TradingAgent(anthropicKey, wallet, pumpFun, agentConfig);
+  const agent = new TradingAgent(anthropicKey, wallet, pumpFun, agentConfig, memory);
   console.log(`🤖 Trading Agent initialized with ${agentConfig.riskTolerance} risk tolerance\n`);
 
   // Start web server

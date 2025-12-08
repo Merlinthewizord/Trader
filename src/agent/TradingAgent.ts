@@ -1,6 +1,7 @@
 import Anthropic from 'anthropic';
 import { SolanaWallet } from '../wallet/SolanaWallet';
 import { PumpFunClient, TokenInfo } from '../trading/PumpFunClient';
+import { MemoryService } from '../memory/MemoryService';
 
 export interface TradeDecision {
   action: 'buy' | 'sell' | 'hold';
@@ -24,25 +25,35 @@ export class TradingAgent {
   private wallet: SolanaWallet;
   private pumpFun: PumpFunClient;
   private config: AgentConfig;
+  private memory: MemoryService;
   private conversationHistory: { role: string; content: string }[] = [];
 
   constructor(
     apiKey: string,
     wallet: SolanaWallet,
     pumpFun: PumpFunClient,
-    config: AgentConfig
+    config: AgentConfig,
+    memory: MemoryService
   ) {
     this.anthropic = new Anthropic({ apiKey });
     this.wallet = wallet;
     this.pumpFun = pumpFun;
     this.config = config;
+    this.memory = memory;
   }
 
   async analyzeMarket(): Promise<TradeDecision> {
     const balance = await this.wallet.getBalance();
     const trendingTokens = await this.pumpFun.getTrendingTokens(10);
 
-    const prompt = this.buildMarketAnalysisPrompt(balance, trendingTokens);
+    // Retrieve relevant memories from past trades
+    const tradingStats = await this.memory.getTradingStats();
+    const recentMemories = await this.memory.getRelevantMemories(
+      'past trading decisions and their outcomes',
+      5
+    );
+
+    const prompt = this.buildMarketAnalysisPrompt(balance, trendingTokens, tradingStats, recentMemories);
 
     const message = await this.anthropic.messages.create({
       model: 'claude-3-5-sonnet-20241022',
@@ -51,12 +62,18 @@ export class TradingAgent {
     });
 
     const response = message.content[0].type === 'text' ? message.content[0].text : '';
-    return this.parseTradeDecision(response);
+    const decision = this.parseTradeDecision(response);
+
+    // Log the decision to memory (even if not executed yet)
+    await this.memory.logTrade(decision);
+
+    return decision;
   }
 
   async chat(userMessage: string): Promise<string> {
     const balance = await this.wallet.getBalance();
     const recentTxs = await this.wallet.getRecentTransactions(5);
+    const tradingStats = await this.memory.getTradingStats();
 
     this.conversationHistory.push({
       role: 'user',
@@ -67,11 +84,18 @@ export class TradingAgent {
 Current wallet balance: ${balance.toFixed(4)} SOL
 Recent transactions: ${recentTxs.length}
 
+Trading Performance:
+- Total Trades: ${tradingStats.totalTrades}
+- Successful: ${tradingStats.successfulTrades}
+- Failed: ${tradingStats.failedTrades}
+- Success Rate: ${tradingStats.successRate.toFixed(1)}%
+
 You can:
 - Analyze trending tokens on pump.fun
 - Execute buy/sell trades
 - Provide market insights
 - Explain your trading reasoning
+- Learn from past trades to improve your strategy
 
 Be conversational, informative, and strategic. Always explain your reasoning clearly.`;
 
@@ -118,20 +142,48 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
               slippage: this.config.slippageBPS,
             });
 
+      // Log successful trade execution to memory
+      await this.memory.logTrade(decision, signature);
+
       return signature;
     } catch (error: any) {
       console.error('Trade execution failed:', error.message);
+
+      // Log failed trade attempt
+      await this.memory.updateTradeOutcome(
+        decision.tokenSymbol || 'UNKNOWN',
+        'failure',
+        0,
+        `Trade execution failed: ${error.message}`
+      );
+
       throw error;
     }
   }
 
-  private buildMarketAnalysisPrompt(balance: number, tokens: TokenInfo[]): string {
-    return `You are an AI trading agent analyzing the pump.fun market.
+  private buildMarketAnalysisPrompt(
+    balance: number,
+    tokens: TokenInfo[],
+    tradingStats: { totalTrades: number; successfulTrades: number; failedTrades: number; successRate: number },
+    memories: string[]
+  ): string {
+    const memoriesSection = memories.length > 0
+      ? `\n\nPast Trading Experiences (learn from these):\n${memories.map((m, i) => `${i + 1}. ${m}`).join('\n\n')}`
+      : '';
+
+    return `You are an AI trading agent analyzing the pump.fun market. You learn from past trades to improve your strategy.
 
 Current Portfolio:
 - SOL Balance: ${balance.toFixed(4)} SOL
 - Max Trade Amount: ${this.config.maxTradeAmountSOL} SOL
 - Risk Tolerance: ${this.config.riskTolerance}
+
+Trading Performance:
+- Total Trades: ${tradingStats.totalTrades}
+- Successful: ${tradingStats.successfulTrades}
+- Failed: ${tradingStats.failedTrades}
+- Success Rate: ${tradingStats.successRate.toFixed(1)}%
+${memoriesSection}
 
 Top Trending Tokens:
 ${tokens.map((t, i) => `${i + 1}. ${t.symbol} (${t.name})
@@ -145,13 +197,15 @@ Analyze these tokens and decide if you should:
 2. SELL a token from portfolio (if holding any)
 3. HOLD (wait for better opportunities)
 
+IMPORTANT: Learn from your past experiences above. If you've traded similar tokens before, consider what worked and what didn't.
+
 Respond in this exact JSON format:
 {
   "action": "buy|sell|hold",
   "tokenMint": "token_address_if_buying_or_selling",
   "tokenSymbol": "TOKEN_SYMBOL",
   "amount": amount_in_SOL,
-  "reasoning": "detailed explanation of your decision",
+  "reasoning": "detailed explanation of your decision (mention any relevant lessons from past trades)",
   "confidence": 0-100,
   "riskLevel": "low|medium|high"
 }`;
