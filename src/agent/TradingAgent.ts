@@ -1,4 +1,4 @@
-import Anthropic from 'anthropic';
+import Anthropic from '@anthropic-ai/sdk';
 import { SolanaWallet } from '../wallet/SolanaWallet';
 import { PumpFunClient, TokenInfo } from '../trading/PumpFunClient';
 import { MemoryService } from '../memory/MemoryService';
