@@ -14,7 +14,8 @@ An AI-powered trading agent for Solana blockchain integrated with pump.fun. Feat
   - Wallet balance and address
   - Trading reasoning and decision-making process
   - Recent transaction history
-- **WebSocket Communication**: Real-time updates for trades and wallet changes
+- **Flexible Deployment**: Run standalone or deploy to Vercel serverless
+- **WebSocket Communication**: Real-time updates for trades and wallet changes (standalone mode)
 - **Configurable Risk Management**: Set trading limits and risk tolerance
 - **Learning from Experience**: Agent remembers past trades, outcomes, and lessons learned
 
@@ -149,16 +150,31 @@ npm run dev
 
 This starts the server with hot-reload enabled.
 
-### Production Mode
+### Production Mode (Standalone)
 
 ```bash
 npm run build
 npm start
 ```
 
+### Vercel Deployment
+
+Deploy to Vercel for serverless, auto-scaling infrastructure:
+
+```bash
+# Install Vercel CLI
+npm install -g vercel
+
+# Deploy
+npm run deploy
+```
+
+**📖 See [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) for detailed deployment instructions.**
+
 ### Access the Interface
 
-Open your browser to `http://localhost:3000`
+**Standalone**: `http://localhost:3000`
+**Vercel**: Your custom Vercel URL (e.g., `https://your-project.vercel.app`)
 
 You'll see:
 - **Left Panel**: Chat interface to communicate with the agent

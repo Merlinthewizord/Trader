@@ -1,0 +1,36 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/**/*.ts",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "public/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/public/$1"
+    }
+  ],
+  "env": {
+    "SOLANA_RPC_URL": "@solana_rpc_url",
+    "SOLANA_PRIVATE_KEY": "@solana_private_key",
+    "ANTHROPIC_API_KEY": "@anthropic_api_key",
+    "MEM0_API_KEY": "@mem0_api_key",
+    "JUPITER_API_KEY": "@jupiter_api_key",
+    "PRIORITY_FEE": "@priority_fee",
+    "POOL": "@pool",
+    "MAX_TRADE_AMOUNT_SOL": "@max_trade_amount_sol",
+    "MIN_TRADE_AMOUNT_SOL": "@min_trade_amount_sol",
+    "SLIPPAGE_BPS": "@slippage_bps",
+    "RISK_TOLERANCE": "@risk_tolerance"
+  }
+}
