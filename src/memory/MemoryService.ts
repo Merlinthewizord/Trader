@@ -21,7 +21,7 @@ export class MemoryService {
   private userId: string;
 
   constructor(apiKey: string, userId: string = 'trading-agent-001') {
-    this.client = new MemoryClient(apiKey);
+    this.client = new MemoryClient({ apiKey });
     this.userId = userId;
   }
 
@@ -46,17 +46,20 @@ export class MemoryService {
       // Create a structured memory entry
       const memoryText = this.formatTradeForMemory(tradeRecord);
 
-      await this.client.add(memoryText, {
-        user_id: this.userId,
-        metadata: {
-          type: 'trade',
-          action: decision.action,
-          tokenSymbol: decision.tokenSymbol,
-          confidence: decision.confidence,
-          riskLevel: decision.riskLevel,
-          timestamp: tradeRecord.timestamp,
-        },
-      });
+      await this.client.add(
+        [{ role: 'user', content: memoryText }],
+        {
+          user_id: this.userId,
+          metadata: {
+            type: 'trade',
+            action: decision.action,
+            tokenSymbol: decision.tokenSymbol,
+            confidence: decision.confidence,
+            riskLevel: decision.riskLevel,
+            timestamp: tradeRecord.timestamp,
+          },
+        }
+      );
 
       console.log(`✅ Trade logged to memory: ${decision.action.toUpperCase()} ${decision.tokenSymbol || 'N/A'}`);
     } catch (error) {
@@ -78,16 +81,19 @@ export class MemoryService {
 Profit/Loss: ${profitLoss >= 0 ? '+' : ''}${profitLoss.toFixed(4)} SOL.
 Lesson learned: ${lessonLearned}`;
 
-      await this.client.add(outcomeText, {
-        user_id: this.userId,
-        metadata: {
-          type: 'trade_outcome',
-          tokenSymbol,
-          outcome,
-          profitLoss,
-          timestamp: new Date().toISOString(),
-        },
-      });
+      await this.client.add(
+        [{ role: 'user', content: outcomeText }],
+        {
+          user_id: this.userId,
+          metadata: {
+            type: 'trade_outcome',
+            tokenSymbol,
+            outcome,
+            profitLoss,
+            timestamp: new Date().toISOString(),
+          },
+        }
+      );
 
       console.log(`✅ Trade outcome updated for ${tokenSymbol}: ${outcome}`);
     } catch (error) {
@@ -230,13 +236,16 @@ Lesson learned: ${lessonLearned}`;
    */
   async addInsight(insight: string): Promise<void> {
     try {
-      await this.client.add(insight, {
-        user_id: this.userId,
-        metadata: {
-          type: 'insight',
-          timestamp: new Date().toISOString(),
-        },
-      });
+      await this.client.add(
+        [{ role: 'user', content: insight }],
+        {
+          user_id: this.userId,
+          metadata: {
+            type: 'insight',
+            timestamp: new Date().toISOString(),
+          },
+        }
+      );
 
       console.log('✅ Insight added to memory');
     } catch (error) {
