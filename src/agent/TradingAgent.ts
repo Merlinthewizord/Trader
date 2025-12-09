@@ -3,6 +3,7 @@ import { SolanaWallet } from '../wallet/SolanaWallet';
 import { PumpFunClient, TokenInfo } from '../trading/PumpFunClient';
 import { MemoryService } from '../memory/MemoryService';
 import { KnowledgeBase } from '../knowledge/KnowledgeBase';
+import { DexScreenerClient, DexPair } from '../trading/DexScreenerClient';
 
 export interface TradeDecision {
   action: 'buy' | 'sell' | 'hold';
@@ -28,6 +29,7 @@ export class TradingAgent {
   private config: AgentConfig;
   private memory: MemoryService;
   private knowledgeBase: KnowledgeBase;
+  private dexScreener: DexScreenerClient;
   private conversationHistory: { role: string; content: string }[] = [];
 
   constructor(
@@ -43,11 +45,23 @@ export class TradingAgent {
     this.config = config;
     this.memory = memory;
     this.knowledgeBase = new KnowledgeBase();
+    this.dexScreener = new DexScreenerClient();
   }
 
   async analyzeMarket(): Promise<TradeDecision> {
     const balance = await this.wallet.getBalance();
     const trendingTokens = await this.pumpFun.getTrendingTokens(10);
+
+    // Fetch new pairs from DexScreener (last 6 hours)
+    console.log('🔍 Fetching new Solana pairs from DexScreener...');
+    const newPairs = await this.dexScreener.getNewSolanaPairs(6);
+    const trendingPairs = await this.dexScreener.getTrendingPairs();
+
+    // Analyze pair quality
+    const pairAnalysis = newPairs.slice(0, 10).map((pair) => ({
+      pair,
+      quality: this.dexScreener.analyzePairQuality(pair),
+    }));
 
     // Retrieve relevant memories from past trades
     const tradingStats = await this.memory.getTradingStats();
@@ -56,7 +70,13 @@ export class TradingAgent {
       5
     );
 
-    const prompt = this.buildMarketAnalysisPrompt(balance, trendingTokens, tradingStats, recentMemories);
+    const prompt = this.buildMarketAnalysisPrompt(
+      balance,
+      trendingTokens,
+      pairAnalysis,
+      tradingStats,
+      recentMemories
+    );
 
     const message = await this.anthropic.messages.create({
       model: 'claude-sonnet-4-5-20250929',
@@ -169,6 +189,7 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
   private buildMarketAnalysisPrompt(
     balance: number,
     tokens: TokenInfo[],
+    pairAnalysis: Array<{ pair: DexPair; quality: { score: number; signals: string[]; warnings: string[] } }>,
     tradingStats: { totalTrades: number; successfulTrades: number; failedTrades: number; successRate: number },
     memories: string[]
   ): string {
@@ -195,7 +216,7 @@ Trading Performance:
 - Success Rate: ${tradingStats.successRate.toFixed(1)}%
 ${memoriesSection}
 
-Top Trending Tokens:
+Top Trending Tokens (Pump.fun):
 ${tokens.map((t, i) => `${i + 1}. ${t.symbol} (${t.name})
    - Mint: ${t.id}
    - Price: $${t.usdPrice?.toFixed(6) || 'N/A'}
@@ -206,7 +227,28 @@ ${tokens.map((t, i) => `${i + 1}. ${t.symbol} (${t.name})
    - Organic Score: ${t.organicScore?.toFixed(1) || 'N/A'} (${t.organicScoreLabel || 'N/A'})
    - Verified: ${t.isVerified ? 'Yes' : 'No'}`).join('\n\n')}
 
-Analyze these tokens using your trading expertise and decide:
+NEW Solana Pairs from DexScreener (Last 6 Hours):
+${pairAnalysis.map((analysis, i) => {
+  const p = analysis.pair;
+  const q = analysis.quality;
+  const ageHours = p.pairCreatedAt ? ((Date.now() - p.pairCreatedAt) / (1000 * 60 * 60)).toFixed(1) : 'N/A';
+
+  return `${i + 1}. ${p.baseToken.symbol}/${p.quoteToken.symbol} (${p.dexId})
+   - Pair Address: ${p.pairAddress}
+   - Token Address: ${p.baseToken.address}
+   - Age: ${ageHours} hours
+   - Price: $${parseFloat(p.priceUsd || '0').toFixed(8)}
+   - Market Cap: $${p.marketCap?.toLocaleString() || 'N/A'}
+   - Liquidity: $${p.liquidity?.usd?.toLocaleString() || 'N/A'}
+   - 24h Volume: $${p.volume?.h24?.toLocaleString() || 'N/A'}
+   - 24h Change: ${p.priceChange?.h24?.toFixed(2) || 'N/A'}%
+   - 24h Txns: ${(p.txns?.h24?.buys || 0) + (p.txns?.h24?.sells || 0)} (${p.txns?.h24?.buys || 0} buys, ${p.txns?.h24?.sells || 0} sells)
+   - Quality Score: ${q.score}/100
+   - Signals: ${q.signals.length > 0 ? q.signals.join(', ') : 'None'}
+   - Warnings: ${q.warnings.length > 0 ? q.warnings.join(', ') : 'None'}`;
+}).join('\n\n')}
+
+Analyze these tokens AND new pairs using your trading expertise and decide:
 1. BUY a specific token (provide which one and how much SOL)
 2. SELL a token from portfolio (if holding any)
 3. HOLD (wait for better opportunities)
@@ -216,6 +258,8 @@ CRITICAL ANALYSIS REQUIREMENTS:
 - Verify GREEN FLAGS: Organic social proof, volume confirmation, consistent buy pressure
 - Apply POSITION SIZING: Never exceed 3-5% of balance on single trade
 - Consider TIMING: Enter Phase 1-2 (0-60 min), avoid chasing Phase 3 FOMO
+- NEW PAIRS ANALYSIS: DexScreener pairs <1 hour old = ultra high risk. Quality Score <50 = AVOID. Low liquidity (<$10K) = manipulation risk.
+- LIQUIDITY CHECK: For DexScreener pairs, prioritize those with locked liquidity and >$50K USD liquidity
 - Use STOP LOSS: Plan -20% exit point BEFORE entering
 - Remember: 98% of tokens fail. Be selective. Quality over quantity.
 
