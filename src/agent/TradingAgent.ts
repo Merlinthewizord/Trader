@@ -56,7 +56,7 @@ export class TradingAgent {
     const prompt = this.buildMarketAnalysisPrompt(balance, trendingTokens, tradingStats, recentMemories);
 
     const message = await this.anthropic.messages.create({
-      model: 'claude-3-opus-20240229',
+      model: 'claude-sonnet-4-5-20250929',
       max_tokens: 1024,
       messages: [{ role: 'user', content: prompt }],
     });
@@ -108,7 +108,7 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
     ];
 
     const message = await this.anthropic.messages.create({
-      model: 'claude-3-opus-20240229',
+      model: 'claude-sonnet-4-5-20250929',
       max_tokens: 2048,
       messages: messages,
     });
