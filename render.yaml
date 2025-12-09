@@ -3,6 +3,7 @@ services:
     name: solana-trading-agent
     runtime: node
     env: node
+    rootDir: .
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
