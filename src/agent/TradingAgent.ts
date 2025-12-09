@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { SolanaWallet } from '../wallet/SolanaWallet';
 import { PumpFunClient, TokenInfo } from '../trading/PumpFunClient';
 import { MemoryService } from '../memory/MemoryService';
+import { KnowledgeBase } from '../knowledge/KnowledgeBase';
 
 export interface TradeDecision {
   action: 'buy' | 'sell' | 'hold';
@@ -26,6 +27,7 @@ export class TradingAgent {
   private pumpFun: PumpFunClient;
   private config: AgentConfig;
   private memory: MemoryService;
+  private knowledgeBase: KnowledgeBase;
   private conversationHistory: { role: string; content: string }[] = [];
 
   constructor(
@@ -40,6 +42,7 @@ export class TradingAgent {
     this.pumpFun = pumpFun;
     this.config = config;
     this.memory = memory;
+    this.knowledgeBase = new KnowledgeBase();
   }
 
   async analyzeMarket(): Promise<TradeDecision> {
@@ -173,7 +176,12 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
       ? `\n\nPast Trading Experiences (learn from these):\n${memories.map((m, i) => `${i + 1}. ${m}`).join('\n\n')}`
       : '';
 
-    return `You are an AI trading agent analyzing the pump.fun market. You learn from past trades to improve your strategy.
+    // Get trading wisdom from knowledge base
+    const tradingWisdom = this.knowledgeBase.getTradingWisdom();
+
+    return `You are an EXPERT meme coin trading agent with comprehensive knowledge of pump.fun dynamics, risk management, and market psychology.
+
+${tradingWisdom}
 
 Current Portfolio:
 - SOL Balance: ${balance.toFixed(4)} SOL
@@ -198,12 +206,20 @@ ${tokens.map((t, i) => `${i + 1}. ${t.symbol} (${t.name})
    - Organic Score: ${t.organicScore?.toFixed(1) || 'N/A'} (${t.organicScoreLabel || 'N/A'})
    - Verified: ${t.isVerified ? 'Yes' : 'No'}`).join('\n\n')}
 
-Analyze these tokens and decide if you should:
-1. BUY a specific token (provide which one and how much SOL to spend)
+Analyze these tokens using your trading expertise and decide:
+1. BUY a specific token (provide which one and how much SOL)
 2. SELL a token from portfolio (if holding any)
 3. HOLD (wait for better opportunities)
 
-IMPORTANT: Learn from your past experiences above. If you've traded similar tokens before, consider what worked and what didn't.
+CRITICAL ANALYSIS REQUIREMENTS:
+- Check for RED FLAGS: Holder concentration >50%, unlocked liquidity, bundled buys
+- Verify GREEN FLAGS: Organic social proof, volume confirmation, consistent buy pressure
+- Apply POSITION SIZING: Never exceed 3-5% of balance on single trade
+- Consider TIMING: Enter Phase 1-2 (0-60 min), avoid chasing Phase 3 FOMO
+- Use STOP LOSS: Plan -20% exit point BEFORE entering
+- Remember: 98% of tokens fail. Be selective. Quality over quantity.
+
+Learn from past experiences and trading wisdom above. Apply risk management strictly.
 
 Respond in this exact JSON format:
 {
@@ -211,7 +227,7 @@ Respond in this exact JSON format:
   "tokenMint": "token_address_if_buying_or_selling",
   "tokenSymbol": "TOKEN_SYMBOL",
   "amount": amount_in_SOL,
-  "reasoning": "detailed explanation of your decision (mention any relevant lessons from past trades)",
+  "reasoning": "detailed explanation citing specific signals (volume, holder distribution, social proof, phase timing, red/green flags)",
   "confidence": 0-100,
   "riskLevel": "low|medium|high"
 }`;
