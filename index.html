@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solana Trading Agent Terminal</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Left Panel: Chat Interface -->
+    <div class="panel left-panel">
+      <div class="panel-header">
+        <h2>💬 Agent Chat</h2>
+        <div class="status-indicator connected" id="connection-status">
+          <span class="dot"></span>
+          <span class="status-text">Connected</span>
+        </div>
+      </div>
+
+      <div class="chat-container" id="chat-container">
+        <div class="welcome-message">
+          <p>🤖 <strong>Solana Trading Agent</strong> online</p>
+          <p>Type a message to start chatting or click "Analyze Market" to begin trading.</p>
+          <p><em>Deployed on Vercel • Serverless Architecture</em></p>
+        </div>
+      </div>
+
+      <div class="input-container">
+        <input
+          type="text"
+          id="chat-input"
+          placeholder="Ask the agent anything..."
+          autocomplete="off"
+        />
+        <button id="send-btn">Send</button>
+        <button id="analyze-btn" class="secondary-btn">Analyze Market</button>
+      </div>
+    </div>
+
+    <!-- Right Panel: Wallet & Trading Info -->
+    <div class="panel right-panel">
+      <div class="panel-header">
+        <h2>💼 Wallet & Trading</h2>
+      </div>
+
+      <!-- Wallet Balance Section -->
+      <div class="info-section">
+        <h3>Wallet Balance</h3>
+        <div class="balance-display">
+          <div class="balance-amount" id="sol-balance">0.0000</div>
+          <div class="balance-label">SOL</div>
+        </div>
+        <div class="wallet-address" id="wallet-address">
+          Loading wallet address...
+        </div>
+      </div>
+
+      <!-- Trading Reasoning Section -->
+      <div class="info-section">
+        <h3>🧠 Trading Reasoning</h3>
+        <div class="reasoning-container" id="reasoning-container">
+          <p class="placeholder">No trading decisions yet. Click "Analyze Market" to see the agent's thinking process.</p>
+        </div>
+      </div>
+
+      <!-- Recent Transactions -->
+      <div class="info-section">
+        <h3>📊 Recent Activity</h3>
+        <div class="transactions-container" id="transactions-container">
+          <p class="placeholder">No recent transactions</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app-vercel.js"></script>
+</body>
+</html>
