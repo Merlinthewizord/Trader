@@ -70,10 +70,45 @@ export class SolanaWallet {
   }
 
   async getRecentTransactions(limit: number = 10): Promise<any[]> {
-    const signatures = await this.connection.getSignaturesForAddress(
-      this.publicKey,
-      { limit }
-    );
-    return signatures;
+    try {
+      const signatures = await this.connection.getSignaturesForAddress(
+        this.publicKey,
+        { limit }
+      );
+
+      // Fetch full transaction details including logs and token balances
+      const transactions = await Promise.all(
+        signatures.map(async (sig) => {
+          try {
+            const tx = await this.connection.getTransaction(sig.signature, {
+              maxSupportedTransactionVersion: 0,
+            });
+
+            return {
+              signature: sig.signature,
+              blockTime: sig.blockTime,
+              slot: sig.slot,
+              err: sig.err,
+              meta: tx?.meta,
+              transaction: tx?.transaction,
+            };
+          } catch (error) {
+            console.error(`Error fetching transaction ${sig.signature}:`, error);
+            return {
+              signature: sig.signature,
+              blockTime: sig.blockTime,
+              slot: sig.slot,
+              err: sig.err,
+              meta: null,
+            };
+          }
+        })
+      );
+
+      return transactions;
+    } catch (error) {
+      console.error('Error getting recent transactions:', error);
+      return [];
+    }
   }
 }

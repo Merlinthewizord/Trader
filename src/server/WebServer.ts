@@ -267,18 +267,80 @@ export class WebServer {
   }
 
   private detectTransactionType(tx: any): string {
-    if (!tx.meta) return '❓ Unknown';
+    if (!tx.meta) return '❓ Unknown Transaction';
 
-    const preBalances = tx.meta.preBalances || [];
-    const postBalances = tx.meta.postBalances || [];
+    try {
+      // Check transaction logs for pump.fun activity
+      const logs = tx.meta.logMessages || [];
+      const logText = logs.join(' ').toLowerCase();
 
-    if (preBalances.length > 0 && postBalances.length > 0) {
-      const balanceChange = (postBalances[0] - preBalances[0]) / 1e9;
-      if (balanceChange > 0.001) return '📥 Received';
-      if (balanceChange < -0.001) return '📤 Sent/Trade';
+      // Detect pump.fun/Raydium swaps
+      if (logText.includes('swap') || logText.includes('raydium') || logText.includes('pump')) {
+        const preBalances = tx.meta.preBalances || [];
+        const postBalances = tx.meta.postBalances || [];
+
+        if (preBalances.length > 0 && postBalances.length > 0) {
+          const solChange = (postBalances[0] - preBalances[0]) / 1e9;
+
+          // Check token balances to determine buy/sell
+          const preTokenBalances = tx.meta.preTokenBalances || [];
+          const postTokenBalances = tx.meta.postTokenBalances || [];
+
+          if (solChange < -0.001 && postTokenBalances.length > preTokenBalances.length) {
+            // Spent SOL and gained tokens = BUY
+            return `🟢 Buy Token (${Math.abs(solChange).toFixed(4)} SOL)`;
+          } else if (solChange > 0.001 && preTokenBalances.length > postTokenBalances.length) {
+            // Gained SOL and lost tokens = SELL
+            return `🔴 Sell Token (+${solChange.toFixed(4)} SOL)`;
+          } else if (solChange < -0.001) {
+            return `💱 Token Swap (${Math.abs(solChange).toFixed(4)} SOL)`;
+          } else if (solChange > 0.001) {
+            return `💱 Token Swap (+${solChange.toFixed(4)} SOL)`;
+          }
+        }
+
+        return '💱 Token Swap';
+      }
+
+      // Check for SOL transfers
+      const preBalances = tx.meta.preBalances || [];
+      const postBalances = tx.meta.postBalances || [];
+
+      if (preBalances.length > 0 && postBalances.length > 0) {
+        const balanceChange = (postBalances[0] - preBalances[0]) / 1e9;
+
+        if (balanceChange > 0.001) {
+          return `📥 Received ${balanceChange.toFixed(4)} SOL`;
+        }
+        if (balanceChange < -0.001) {
+          return `📤 Sent ${Math.abs(balanceChange).toFixed(4)} SOL`;
+        }
+      }
+
+      // Check for token transfers
+      const preTokenBalances = tx.meta.preTokenBalances || [];
+      const postTokenBalances = tx.meta.postTokenBalances || [];
+
+      if (postTokenBalances.length > preTokenBalances.length) {
+        return '📥 Received Tokens';
+      }
+      if (postTokenBalances.length < preTokenBalances.length) {
+        return '📤 Sent Tokens';
+      }
+
+      // Check for program interactions
+      if (tx.transaction?.message?.instructions) {
+        const instructions = tx.transaction.message.instructions;
+        if (instructions.length > 0) {
+          return '⚙️ Program Interaction';
+        }
+      }
+
+      return '🔄 Transaction';
+    } catch (error) {
+      console.error('Error detecting transaction type:', error);
+      return '❓ Unknown Transaction';
     }
-
-    return '🔄 Transaction';
   }
 
   broadcast(message: ServerMessage) {
