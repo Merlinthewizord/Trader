@@ -4,6 +4,7 @@ import { PumpFunClient } from './trading/PumpFunClient';
 import { TradingAgent, AgentConfig } from './agent/TradingAgent';
 import { MemoryService } from './memory/MemoryService';
 import { WebServer } from './server/WebServer';
+import { TradingScheduler, TradingSchedulerConfig } from './scheduler/TradingScheduler';
 
 dotenv.config();
 
@@ -55,16 +56,34 @@ async function main() {
   const agent = new TradingAgent(anthropicKey, wallet, pumpFun, agentConfig, memory);
   console.log(`🤖 Trading Agent initialized with ${agentConfig.riskTolerance} risk tolerance\n`);
 
+  // Initialize autonomous trading scheduler
+  const schedulerConfig: TradingSchedulerConfig = {
+    intervalMinutes: parseFloat(process.env.TRADING_INTERVAL_MINUTES || '5'),
+    autoExecute: process.env.AUTO_EXECUTE_TRADES === 'true',
+    minConfidenceForAutoTrade: parseInt(process.env.MIN_CONFIDENCE_AUTO_TRADE || '70'),
+    enabled: process.env.AUTONOMOUS_TRADING_ENABLED !== 'false', // Enabled by default
+  };
+
+  const scheduler = new TradingScheduler(agent, wallet, schedulerConfig);
+
   // Start web server
   const port = parseInt(process.env.PORT || '3000');
-  const webServer = new WebServer(agent, wallet, pumpFun);
+  const webServer = new WebServer(agent, wallet, pumpFun, scheduler);
 
   await webServer.start(port);
   console.log(`🌐 Web interface available at http://localhost:${port}\n`);
 
+  // Start autonomous trading if enabled
+  if (schedulerConfig.enabled) {
+    scheduler.start();
+  } else {
+    console.log('⏸️  Autonomous trading is DISABLED (set AUTONOMOUS_TRADING_ENABLED=true to enable)\n');
+  }
+
   // Graceful shutdown
   process.on('SIGINT', async () => {
     console.log('\n👋 Shutting down gracefully...');
+    scheduler.stop();
     await webServer.stop();
     process.exit(0);
   });

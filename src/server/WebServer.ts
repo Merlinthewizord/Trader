@@ -4,6 +4,7 @@ import { Server } from 'http';
 import { TradingAgent } from '../agent/TradingAgent';
 import { SolanaWallet } from '../wallet/SolanaWallet';
 import { PumpFunClient } from '../trading/PumpFunClient';
+import { TradingScheduler } from '../scheduler/TradingScheduler';
 
 export interface ClientMessage {
   type: 'chat' | 'analyze' | 'execute_trade';
@@ -11,7 +12,7 @@ export interface ClientMessage {
 }
 
 export interface ServerMessage {
-  type: 'chat_response' | 'trade_decision' | 'wallet_update' | 'error' | 'thinking';
+  type: 'chat_response' | 'trade_decision' | 'wallet_update' | 'error' | 'thinking' | 'autonomous_event';
   data: any;
 }
 
@@ -22,16 +23,19 @@ export class WebServer {
   private agent: TradingAgent;
   private wallet: SolanaWallet;
   private pumpFun: PumpFunClient;
+  private scheduler: TradingScheduler;
   private clients: Set<WebSocket> = new Set();
 
-  constructor(agent: TradingAgent, wallet: SolanaWallet, pumpFun: PumpFunClient) {
+  constructor(agent: TradingAgent, wallet: SolanaWallet, pumpFun: PumpFunClient, scheduler: TradingScheduler) {
     this.app = express();
     this.agent = agent;
     this.wallet = wallet;
     this.pumpFun = pumpFun;
+    this.scheduler = scheduler;
 
     this.setupMiddleware();
     this.setupRoutes();
+    this.setupSchedulerEvents();
   }
 
   private setupMiddleware() {
@@ -117,6 +121,55 @@ export class WebServer {
         console.error('❌ Error in execute endpoint:', error);
         res.status(500).json({ error: error.message });
       }
+    });
+
+    // Autonomous trading control endpoints
+    this.app.get('/api/scheduler/status', (req: Request, res: Response) => {
+      try {
+        res.json({
+          running: this.scheduler.isRunning(),
+        });
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    this.app.post('/api/scheduler/start', (req: Request, res: Response) => {
+      try {
+        this.scheduler.start();
+        res.json({ status: 'started', running: true });
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    this.app.post('/api/scheduler/stop', (req: Request, res: Response) => {
+      try {
+        this.scheduler.stop();
+        res.json({ status: 'stopped', running: false });
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    this.app.post('/api/scheduler/config', (req: Request, res: Response) => {
+      try {
+        const config = req.body;
+        this.scheduler.updateConfig(config);
+        res.json({ status: 'updated', config });
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+  }
+
+  private setupSchedulerEvents() {
+    // Listen for scheduler events and broadcast to all connected clients
+    this.scheduler.onEvent((event) => {
+      this.broadcast({
+        type: 'autonomous_event',
+        data: event,
+      });
     });
   }
 

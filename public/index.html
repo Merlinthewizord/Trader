@@ -12,29 +12,31 @@
     <div class="panel left-panel">
       <div class="panel-header">
         <h2>💬 Agent Chat</h2>
-        <div class="status-indicator connected" id="connection-status">
-          <span class="dot"></span>
-          <span class="status-text">Connected</span>
+        <div class="header-controls">
+          <div class="status-indicator connected" id="connection-status">
+            <span class="dot"></span>
+            <span class="status-text">Connected</span>
+          </div>
+          <div class="status-indicator" id="trading-status">
+            <span class="dot"></span>
+            <span class="status-text">Checking...</span>
+          </div>
         </div>
       </div>
 
       <div class="chat-container" id="chat-container">
         <div class="welcome-message">
-          <p>🤖 <strong>Solana Trading Agent</strong> online</p>
-          <p>Type a message to start chatting or click "Analyze Market" to begin trading.</p>
-          <p><em>Deployed on Vercel • Serverless Architecture</em></p>
+          <p>🤖 <strong>Autonomous Solana Trading Bot</strong> online</p>
+          <p>The bot continuously monitors the market and makes trading decisions every 5 minutes.</p>
+          <p>Watch the activity feed below for real-time trading updates.</p>
         </div>
       </div>
 
       <div class="input-container">
-        <input
-          type="text"
-          id="chat-input"
-          placeholder="Ask the agent anything..."
-          autocomplete="off"
-        />
-        <button id="send-btn">Send</button>
-        <button id="analyze-btn" class="secondary-btn">Analyze Market</button>
+        <button id="toggle-trading-btn" class="primary-btn" data-running="false">
+          ▶️ Start Auto-Trading
+        </button>
+        <button id="analyze-btn" class="secondary-btn">🔍 Manual Analysis</button>
       </div>
     </div>
 
