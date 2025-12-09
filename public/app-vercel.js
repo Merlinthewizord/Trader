@@ -151,13 +151,13 @@ class TradingTerminal {
 
         this.elements.transactionsContainer.innerHTML = txData.transactions
           .map((tx) => {
-            const date = new Date(tx.blockTime * 1000).toLocaleString();
             return `
               <div class="transaction-item">
-                <div>Block: ${tx.slot}</div>
-                <div>Time: ${date}</div>
-                <div class="transaction-signature">
-                  ${tx.signature.substring(0, 40)}...
+                <div style="font-weight: bold;">${tx.type} ${tx.status}</div>
+                <div style="font-size: 0.9em; opacity: 0.8;">${tx.timestamp}</div>
+                <div style="font-size: 0.85em;">Fee: ${tx.fee}</div>
+                <div class="transaction-signature" style="font-size: 0.8em; opacity: 0.6;">
+                  ${tx.signature.substring(0, 30)}...
                 </div>
               </div>
             `;
