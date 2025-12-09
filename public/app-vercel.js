@@ -1,7 +1,8 @@
 class TradingTerminal {
   constructor() {
+    this.ws = null;
+    this.reconnectInterval = null;
     this.pollingInterval = null;
-    this.statusPollingInterval = null;
     this.elements = {
       chatContainer: document.getElementById('chat-container'),
       toggleTradingBtn: document.getElementById('toggle-trading-btn'),
@@ -19,15 +20,134 @@ class TradingTerminal {
 
   init() {
     this.setupEventListeners();
-    this.updateWalletInfo();
-    this.updateConnectionStatus(true);
+    this.connectWebSocket();
     this.updateTradingStatus();
 
-    // Poll wallet balance every 30 seconds
+    // Poll wallet balance every 30 seconds as backup
     this.pollingInterval = setInterval(() => this.updateWalletInfo(), 30000);
+  }
 
-    // Poll trading status every 5 seconds
-    this.statusPollingInterval = setInterval(() => this.updateTradingStatus(), 5000);
+  connectWebSocket() {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}`;
+
+    console.log('Connecting to WebSocket:', wsUrl);
+
+    try {
+      this.ws = new WebSocket(wsUrl);
+
+      this.ws.onopen = () => {
+        console.log('✅ WebSocket connected');
+        this.updateConnectionStatus(true);
+        this.addActivityLog('system', 'Connected to trading bot');
+
+        // Clear reconnect interval if exists
+        if (this.reconnectInterval) {
+          clearInterval(this.reconnectInterval);
+          this.reconnectInterval = null;
+        }
+
+        // Request initial wallet info
+        this.updateWalletInfo();
+      };
+
+      this.ws.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data);
+          this.handleServerMessage(message);
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error);
+        }
+      };
+
+      this.ws.onclose = () => {
+        console.log('❌ WebSocket disconnected');
+        this.updateConnectionStatus(false);
+        this.addActivityLog('error', 'Disconnected from trading bot. Reconnecting...');
+
+        // Attempt to reconnect every 5 seconds
+        if (!this.reconnectInterval) {
+          this.reconnectInterval = setInterval(() => {
+            console.log('Attempting to reconnect...');
+            this.connectWebSocket();
+          }, 5000);
+        }
+      };
+
+      this.ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        this.updateConnectionStatus(false);
+      };
+    } catch (error) {
+      console.error('Error creating WebSocket:', error);
+      this.updateConnectionStatus(false);
+    }
+  }
+
+  handleServerMessage(message) {
+    console.log('📨 Server message:', message.type);
+
+    switch (message.type) {
+      case 'wallet_update':
+        this.handleWalletUpdate(message.data);
+        break;
+
+      case 'autonomous_event':
+        this.handleAutonomousEvent(message.data);
+        break;
+
+      case 'trade_decision':
+        this.displayTradeDecision(message.data, message.data.autoExecuted || false);
+        break;
+
+      case 'chat_response':
+        this.addActivityLog('assistant', message.data.message);
+        break;
+
+      case 'thinking':
+        this.addActivityLog('thinking', message.data.message);
+        break;
+
+      case 'error':
+        this.addActivityLog('error', message.data.message);
+        break;
+    }
+  }
+
+  handleWalletUpdate(data) {
+    if (data.balance !== undefined) {
+      this.elements.solBalance.textContent = data.balance.toFixed(4);
+    }
+    if (data.address) {
+      this.elements.walletAddress.textContent = `Address: ${data.address}`;
+    }
+  }
+
+  handleAutonomousEvent(event) {
+    switch (event.type) {
+      case 'analysis':
+        this.addActivityLog('system', event.data.message);
+        if (event.data.balance !== undefined) {
+          this.addActivityLog('info', `Wallet balance: ${event.data.balance.toFixed(4)} SOL`);
+        }
+        break;
+
+      case 'decision':
+        this.displayTradeDecision(event.data, true);
+        break;
+
+      case 'trade':
+        this.addActivityLog('success',
+          `✅ Auto-trade executed: ${event.data.action.toUpperCase()} ${event.data.tokenSymbol}\n` +
+          `Signature: ${event.data.signature?.substring(0, 20)}...`
+        );
+        setTimeout(() => this.updateWalletInfo(), 2000);
+        break;
+
+      case 'error':
+        this.addActivityLog('error', `❌ ${event.data.message}: ${event.data.error}`);
+        break;
+    }
   }
 
   updateConnectionStatus(connected) {
@@ -145,7 +265,7 @@ class TradingTerminal {
 
       if (response.ok) {
         this.addActivityLog('success', `✅ Trade executed! Signature: ${data.signature?.substring(0, 20)}...`);
-        this.displayTradeDecision({ ...decision, executed: true, signature: data.signature }, true);
+        this.displayTradeDecision({ ...decision, executed: true, signature: data.signature }, false);
 
         // Update wallet info after trade
         setTimeout(() => this.updateWalletInfo(), 2000);
@@ -194,33 +314,6 @@ class TradingTerminal {
     }
   }
 
-  handleAutonomousEvent(event) {
-    switch (event.type) {
-      case 'analysis':
-        this.addActivityLog('system', event.data.message);
-        if (event.data.balance !== undefined) {
-          this.addActivityLog('info', `Wallet balance: ${event.data.balance.toFixed(4)} SOL`);
-        }
-        break;
-
-      case 'decision':
-        this.displayTradeDecision(event.data, event.data.autoExecuted || false);
-        break;
-
-      case 'trade':
-        this.addActivityLog('success',
-          `✅ Auto-trade executed: ${event.data.action.toUpperCase()} ${event.data.tokenSymbol}\n` +
-          `Signature: ${event.data.signature?.substring(0, 20)}...`
-        );
-        setTimeout(() => this.updateWalletInfo(), 2000);
-        break;
-
-      case 'error':
-        this.addActivityLog('error', `❌ ${event.data.message}: ${event.data.error}`);
-        break;
-    }
-  }
-
   addActivityLog(type, content) {
     const welcomeMsg = this.elements.chatContainer.querySelector('.welcome-message');
     if (welcomeMsg) welcomeMsg.remove();
@@ -235,6 +328,7 @@ class TradingTerminal {
       success: '✅ Success',
       thinking: '💭 Processing',
       error: '❌ Error',
+      assistant: '🤖 Agent',
     };
 
     messageDiv.innerHTML = `
@@ -325,17 +419,17 @@ class TradingTerminal {
     if (this.pollingInterval) {
       clearInterval(this.pollingInterval);
     }
-    if (this.statusPollingInterval) {
-      clearInterval(this.statusPollingInterval);
+    if (this.reconnectInterval) {
+      clearInterval(this.reconnectInterval);
+    }
+    if (this.ws) {
+      this.ws.close();
     }
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   const terminal = new TradingTerminal();
-
-  // Note: WebSocket functionality could be added here in the future
-  // For now, we use polling to check status and activity
 
   // Cleanup on page unload
   window.addEventListener('beforeunload', () => terminal.cleanup());
