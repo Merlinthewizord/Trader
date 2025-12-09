@@ -58,7 +58,17 @@ export class WebServer {
       try {
         const limit = parseInt(req.query.limit as string) || 10;
         const transactions = await this.wallet.getRecentTransactions(limit);
-        res.json({ transactions });
+
+        // Enhance transactions with more details
+        const enhancedTxs = transactions.map((tx: any) => ({
+          signature: tx.signature,
+          timestamp: tx.blockTime ? new Date(tx.blockTime * 1000).toLocaleString() : 'Pending',
+          status: tx.meta?.err ? '❌ Failed' : '✅ Success',
+          fee: tx.meta?.fee ? (tx.meta.fee / 1e9).toFixed(6) + ' SOL' : 'N/A',
+          type: this.detectTransactionType(tx),
+        }));
+
+        res.json({ transactions: enhancedTxs });
       } catch (error: any) {
         res.status(500).json({ error: error.message });
       }
@@ -80,6 +90,31 @@ export class WebServer {
         const response = await this.agent.chat(message);
         res.json({ response });
       } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    this.app.post('/api/agent/analyze', async (req: Request, res: Response) => {
+      try {
+        console.log('🔍 Analyze endpoint called');
+        const decision = await this.agent.analyzeMarket();
+        console.log('✅ Market analysis complete');
+        res.json({ decision });
+      } catch (error: any) {
+        console.error('❌ Error in analyze endpoint:', error);
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    this.app.post('/api/agent/execute', async (req: Request, res: Response) => {
+      try {
+        console.log('⚡ Execute trade endpoint called');
+        const { decision } = req.body;
+        const signature = await this.agent.executeTrade(decision);
+        console.log('✅ Trade executed:', signature);
+        res.json({ signature, executed: true });
+      } catch (error: any) {
+        console.error('❌ Error in execute endpoint:', error);
         res.status(500).json({ error: error.message });
       }
     });
@@ -176,6 +211,21 @@ export class WebServer {
     if (ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify(message));
     }
+  }
+
+  private detectTransactionType(tx: any): string {
+    if (!tx.meta) return '❓ Unknown';
+
+    const preBalances = tx.meta.preBalances || [];
+    const postBalances = tx.meta.postBalances || [];
+
+    if (preBalances.length > 0 && postBalances.length > 0) {
+      const balanceChange = (postBalances[0] - preBalances[0]) / 1e9;
+      if (balanceChange > 0.001) return '📥 Received';
+      if (balanceChange < -0.001) return '📤 Sent/Trade';
+    }
+
+    return '🔄 Transaction';
   }
 
   broadcast(message: ServerMessage) {
