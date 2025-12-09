@@ -6,9 +6,10 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "dev:vercel": "vercel dev",
-    "build": "echo 'Build skipped - Vercel handles API compilation automatically'",
-    "build:vercel": "echo 'Vercel build complete'",
+    "build": "tsc",
+    "build:vercel": "echo 'Build skipped - Vercel handles API compilation automatically'",
     "start": "node dist/index.js",
+    "start:vercel": "echo 'Use Vercel serverless functions'",
     "web": "vite",
     "web:build": "vite build",
     "web:preview": "vite preview",
