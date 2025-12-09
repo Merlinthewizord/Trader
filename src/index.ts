@@ -15,6 +15,12 @@ async function main() {
   const rpcUrl = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
   const privateKey = process.env.SOLANA_PRIVATE_KEY;
 
+  // Log RPC endpoint being used
+  const rpcProvider = rpcUrl.includes('helius') ? '⚡ Helius RPC' :
+                      rpcUrl.includes('quicknode') ? '⚡ QuickNode RPC' :
+                      '🌐 Default RPC';
+  console.log(`${rpcProvider}: ${rpcUrl.split('?')[0]}${rpcUrl.includes('?') ? '?api-key=***' : ''}\n`);
+
   const wallet = new SolanaWallet(rpcUrl, privateKey);
   console.log(`💼 Wallet Address: ${wallet.getAddress()}`);
 

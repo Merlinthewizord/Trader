@@ -61,19 +61,41 @@ export class WebServer {
     this.app.get('/api/wallet/transactions', async (req: Request, res: Response) => {
       try {
         const limit = parseInt(req.query.limit as string) || 10;
+        console.log(`📋 Fetching ${limit} recent transactions via Helius RPC...`);
+
         const transactions = await this.wallet.getRecentTransactions(limit);
 
         // Enhance transactions with more details
-        const enhancedTxs = transactions.map((tx: any) => ({
-          signature: tx.signature,
-          timestamp: tx.blockTime ? new Date(tx.blockTime * 1000).toLocaleString() : 'Pending',
-          status: tx.meta?.err ? '❌ Failed' : '✅ Success',
-          fee: tx.meta?.fee ? (tx.meta.fee / 1e9).toFixed(6) + ' SOL' : 'N/A',
-          type: this.detectTransactionType(tx),
-        }));
+        const enhancedTxs = transactions.map((tx: any) => {
+          // Format timestamp properly
+          let timestamp = 'Pending';
+          if (tx.blockTime) {
+            const date = new Date(tx.blockTime * 1000);
+            // Format: Dec 9, 2025 at 5:30 PM
+            timestamp = date.toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric'
+            }) + ' at ' + date.toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true
+            });
+          }
 
+          return {
+            signature: tx.signature,
+            timestamp,
+            status: tx.err ? '❌ Failed' : '✅ Success',
+            fee: tx.meta?.fee ? (tx.meta.fee / 1e9).toFixed(6) + ' SOL' : 'N/A',
+            type: this.detectTransactionType(tx),
+          };
+        });
+
+        console.log(`✅ Retrieved ${enhancedTxs.length} transactions from Helius`);
         res.json({ transactions: enhancedTxs });
       } catch (error: any) {
+        console.error('❌ Error fetching transactions:', error);
         res.status(500).json({ error: error.message });
       }
     });
