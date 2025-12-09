@@ -19,6 +19,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    console.log('🔍 Analyze endpoint called');
+
     // Initialize components
     const rpcUrl = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
     const privateKey = process.env.SOLANA_PRIVATE_KEY;
@@ -37,11 +39,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Missing MEM0_API_KEY environment variable' });
     }
 
+    console.log('✅ All environment variables present');
+
     const wallet = new SolanaWallet(rpcUrl, privateKey);
+    console.log('✅ Wallet initialized');
+
     const priorityFee = parseFloat(process.env.PRIORITY_FEE || '0.00001');
     const pool = process.env.POOL || 'auto';
     const pumpFun = new PumpFunClient(wallet, priorityFee, pool, jupiterApiKey);
+    console.log('✅ PumpFun client initialized');
+
     const memory = new MemoryService(mem0Key);
+    console.log('✅ Memory service initialized');
 
     const agentConfig: AgentConfig = {
       maxTradeAmountSOL: parseFloat(process.env.MAX_TRADE_AMOUNT_SOL || '0.1'),
@@ -51,7 +60,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
 
     const agent = new TradingAgent(anthropicKey, wallet, pumpFun, agentConfig, memory);
+    console.log('✅ Trading agent initialized');
+    console.log('🤖 Starting market analysis...');
+
     const decision = await agent.analyzeMarket();
+    console.log('✅ Market analysis complete');
 
     return res.status(200).json({ decision });
   } catch (error: any) {
