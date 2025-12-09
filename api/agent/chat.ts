@@ -5,6 +5,15 @@ import { TradingAgent, AgentConfig } from '../../src/agent/TradingAgent';
 import { MemoryService } from '../../src/memory/MemoryService';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -23,8 +32,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const mem0Key = process.env.MEM0_API_KEY;
     const jupiterApiKey = process.env.JUPITER_API_KEY;
 
-    if (!privateKey || !anthropicKey || !mem0Key) {
-      return res.status(500).json({ error: 'Missing required API keys' });
+    if (!privateKey) {
+      return res.status(500).json({ error: 'Missing SOLANA_PRIVATE_KEY environment variable' });
+    }
+    if (!anthropicKey) {
+      return res.status(500).json({ error: 'Missing ANTHROPIC_API_KEY environment variable' });
+    }
+    if (!mem0Key) {
+      return res.status(500).json({ error: 'Missing MEM0_API_KEY environment variable' });
     }
 
     const wallet = new SolanaWallet(rpcUrl, privateKey);
@@ -43,8 +58,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const agent = new TradingAgent(anthropicKey, wallet, pumpFun, agentConfig, memory);
     const response = await agent.chat(message);
 
-    res.status(200).json({ response });
+    return res.status(200).json({ response });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    console.error('Error in chat endpoint:', error);
+    return res.status(500).json({
+      error: error.message || 'Unknown error occurred',
+      details: error.stack ? error.stack.split('\n')[0] : 'No stack trace available'
+    });
   }
 }
