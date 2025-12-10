@@ -105,7 +105,7 @@ export class TradingAgent {
 
   async chat(userMessage: string): Promise<string> {
     const balance = await this.wallet.getBalance();
-    const recentTxs = await this.wallet.getRecentTransactions(5);
+    const recentTxs = await this.wallet.getRecentTransactions(2);
     const tradingStats = await this.memory.getTradingStats();
 
     this.conversationHistory.push({
