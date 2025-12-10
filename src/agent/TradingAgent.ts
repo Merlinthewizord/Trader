@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { SolanaWallet } from '../wallet/SolanaWallet';
 import { PumpFunClient, TokenInfo } from '../trading/PumpFunClient';
 import { MemoryService } from '../memory/MemoryService';
@@ -23,14 +23,14 @@ export interface AgentConfig {
 }
 
 export class TradingAgent {
-  private anthropic: Anthropic;
+  private openai: OpenAI;
   private wallet: SolanaWallet;
   private pumpFun: PumpFunClient;
   private config: AgentConfig;
   private memory: MemoryService;
   private knowledgeBase: KnowledgeBase;
   private dexScreener: DexScreenerClient;
-  private conversationHistory: { role: string; content: string }[] = [];
+  private conversationHistory: { role: 'user' | 'assistant' | 'system'; content: string }[] = [];
 
   constructor(
     apiKey: string,
@@ -39,7 +39,7 @@ export class TradingAgent {
     config: AgentConfig,
     memory: MemoryService
   ) {
-    this.anthropic = new Anthropic({ apiKey });
+    this.openai = new OpenAI({ apiKey });
     this.wallet = wallet;
     this.pumpFun = pumpFun;
     this.config = config;
@@ -78,13 +78,16 @@ export class TradingAgent {
       recentMemories
     );
 
-    const message = await this.anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250929',
+    const completion = await this.openai.chat.completions.create({
+      model: 'gpt-4o',
       max_tokens: 1024,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [
+        { role: 'system', content: 'You are an expert Solana trading agent analyzing market conditions to make informed trading decisions.' },
+        { role: 'user', content: prompt }
+      ],
     });
 
-    const response = message.content[0].type === 'text' ? message.content[0].text : '';
+    const response = completion.choices[0]?.message?.content || '';
     const decision = this.parseTradeDecision(response);
 
     // Log the decision to memory (even if not executed yet)
@@ -122,21 +125,18 @@ You can:
 
 Be conversational, informative, and strategic. Always explain your reasoning clearly.`;
 
-    const messages = [
-      { role: 'user' as const, content: systemPrompt },
-      ...this.conversationHistory.map((msg) => ({
-        role: msg.role as 'user' | 'assistant',
-        content: msg.content,
-      })),
+    const messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }> = [
+      { role: 'system', content: systemPrompt },
+      ...this.conversationHistory,
     ];
 
-    const message = await this.anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250929',
+    const completion = await this.openai.chat.completions.create({
+      model: 'gpt-4o',
       max_tokens: 2048,
       messages: messages,
     });
 
-    const response = message.content[0].type === 'text' ? message.content[0].text : '';
+    const response = completion.choices[0]?.message?.content || '';
 
     this.conversationHistory.push({
       role: 'assistant',

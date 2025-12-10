@@ -52,9 +52,9 @@ async function main() {
   console.log(`🧠 Memory service initialized\n`);
 
   // Initialize trading agent
-  const anthropicKey = process.env.ANTHROPIC_API_KEY;
-  if (!anthropicKey) {
-    console.error('❌ ANTHROPIC_API_KEY not found in environment variables');
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (!openaiKey) {
+    console.error('❌ OPENAI_API_KEY not found in environment variables');
     process.exit(1);
   }
 
@@ -65,8 +65,8 @@ async function main() {
     riskTolerance: (process.env.RISK_TOLERANCE as any) || 'moderate',
   };
 
-  const agent = new TradingAgent(anthropicKey, wallet, pumpFun, agentConfig, memory);
-  console.log(`🤖 Trading Agent initialized with ${agentConfig.riskTolerance} risk tolerance\n`);
+  const agent = new TradingAgent(openaiKey, wallet, pumpFun, agentConfig, memory);
+  console.log(`🤖 Trading Agent initialized with ${agentConfig.riskTolerance} risk tolerance (using OpenAI GPT-4)\n`);
 
   // Initialize autonomous trading scheduler
   const schedulerConfig: TradingSchedulerConfig = {
