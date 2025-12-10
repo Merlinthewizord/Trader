@@ -5,6 +5,7 @@ import { TradingAgent, AgentConfig } from './agent/TradingAgent';
 import { MemoryService } from './memory/MemoryService';
 import { WebServer } from './server/WebServer';
 import { TradingScheduler, TradingSchedulerConfig } from './scheduler/TradingScheduler';
+import { TwitterSpacesBot, TwitterSpacesBotConfig } from './twitter/TwitterSpacesBot';
 
 dotenv.config();
 
@@ -72,9 +73,46 @@ async function main() {
 
   const scheduler = new TradingScheduler(agent, wallet, schedulerConfig);
 
+  // Initialize Twitter Spaces Bot (optional)
+  let twitterBot: TwitterSpacesBot | undefined;
+  if (process.env.TWITTER_BOT_ENABLED === 'true') {
+    const twitterApiKey = process.env.TWITTER_API_KEY;
+    const twitterApiSecret = process.env.TWITTER_API_SECRET;
+    const twitterAccessToken = process.env.TWITTER_ACCESS_TOKEN;
+    const twitterAccessSecret = process.env.TWITTER_ACCESS_SECRET;
+    const openaiApiKey = process.env.OPENAI_API_KEY;
+
+    if (twitterApiKey && twitterApiSecret && twitterAccessToken && twitterAccessSecret && openaiApiKey) {
+      const twitterConfig: TwitterSpacesBotConfig = {
+        twitterApiKey,
+        twitterApiSecret,
+        twitterAccessToken,
+        twitterAccessSecret,
+        openaiApiKey,
+        elevenLabsApiKey: process.env.ELEVENLABS_API_KEY,
+        voiceId: process.env.ELEVENLABS_VOICE_ID,
+        personality: process.env.TWITTER_BOT_PERSONALITY,
+        autoJoinSpaces: process.env.TWITTER_BOT_AUTO_JOIN === 'true',
+        tradingCommentaryEnabled: process.env.TWITTER_BOT_TRADING_COMMENTARY === 'true',
+      };
+
+      twitterBot = new TwitterSpacesBot(twitterConfig, agent);
+      console.log('🐦 Twitter Spaces Bot initialized\n');
+
+      // Start auto-join mode if enabled
+      if (twitterConfig.autoJoinSpaces) {
+        const searchQuery = process.env.TWITTER_BOT_SEARCH_QUERY || 'crypto trading solana';
+        console.log(`🤖 Starting auto-join mode (searching: "${searchQuery}")\n`);
+        twitterBot.startAutoJoinMode(searchQuery, 5);
+      }
+    } else {
+      console.log('⚠️  Twitter bot enabled but missing required API keys. Skipping initialization.\n');
+    }
+  }
+
   // Start web server
   const port = parseInt(process.env.PORT || '3000');
-  const webServer = new WebServer(agent, wallet, pumpFun, scheduler);
+  const webServer = new WebServer(agent, wallet, pumpFun, scheduler, twitterBot);
 
   await webServer.start(port);
   console.log(`🌐 Web interface available at http://localhost:${port}\n`);
