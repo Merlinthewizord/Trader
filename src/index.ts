@@ -5,6 +5,7 @@ import { TradingAgent, AgentConfig } from './agent/TradingAgent';
 import { MemoryService } from './memory/MemoryService';
 import { WebServer } from './server/WebServer';
 import { TradingScheduler, TradingSchedulerConfig } from './scheduler/TradingScheduler';
+import { TwitterSpacesBot, TwitterSpacesBotConfig } from './twitter/TwitterSpacesBot';
 
 dotenv.config();
 
@@ -24,8 +25,13 @@ async function main() {
   const wallet = new SolanaWallet(rpcUrl, privateKey);
   console.log(`💼 Wallet Address: ${wallet.getAddress()}`);
 
-  const balance = await wallet.getBalance();
-  console.log(`💰 Current Balance: ${balance.toFixed(4)} SOL\n`);
+  let balance = 0;
+  try {
+    balance = await wallet.getBalance();
+    console.log(`💰 Current Balance: ${balance.toFixed(4)} SOL\n`);
+  } catch (error) {
+    console.log(`⚠️  Could not fetch balance (network issue), continuing anyway...\n`);
+  }
 
   // Initialize pump.fun client with Jupiter API integration
   const priorityFee = parseFloat(process.env.PRIORITY_FEE || '0.00001');
@@ -46,9 +52,9 @@ async function main() {
   console.log(`🧠 Memory service initialized\n`);
 
   // Initialize trading agent
-  const anthropicKey = process.env.ANTHROPIC_API_KEY;
-  if (!anthropicKey) {
-    console.error('❌ ANTHROPIC_API_KEY not found in environment variables');
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (!openaiKey) {
+    console.error('❌ OPENAI_API_KEY not found in environment variables');
     process.exit(1);
   }
 
@@ -59,8 +65,8 @@ async function main() {
     riskTolerance: (process.env.RISK_TOLERANCE as any) || 'moderate',
   };
 
-  const agent = new TradingAgent(anthropicKey, wallet, pumpFun, agentConfig, memory);
-  console.log(`🤖 Trading Agent initialized with ${agentConfig.riskTolerance} risk tolerance\n`);
+  const agent = new TradingAgent(openaiKey, wallet, pumpFun, agentConfig, memory);
+  console.log(`🤖 Trading Agent initialized with ${agentConfig.riskTolerance} risk tolerance (using OpenRouter gpt-oss-20b)\n`);
 
   // Initialize autonomous trading scheduler
   const schedulerConfig: TradingSchedulerConfig = {
@@ -72,9 +78,46 @@ async function main() {
 
   const scheduler = new TradingScheduler(agent, wallet, schedulerConfig);
 
+  // Initialize Twitter Spaces Bot (optional)
+  let twitterBot: TwitterSpacesBot | undefined;
+  if (process.env.TWITTER_BOT_ENABLED === 'true') {
+    const twitterApiKey = process.env.TWITTER_API_KEY;
+    const twitterApiSecret = process.env.TWITTER_API_SECRET;
+    const twitterAccessToken = process.env.TWITTER_ACCESS_TOKEN;
+    const twitterAccessSecret = process.env.TWITTER_ACCESS_SECRET;
+    const openaiApiKey = process.env.OPENAI_API_KEY;
+
+    if (twitterApiKey && twitterApiSecret && twitterAccessToken && twitterAccessSecret && openaiApiKey) {
+      const twitterConfig: TwitterSpacesBotConfig = {
+        twitterApiKey,
+        twitterApiSecret,
+        twitterAccessToken,
+        twitterAccessSecret,
+        openaiApiKey,
+        elevenLabsApiKey: process.env.ELEVENLABS_API_KEY,
+        voiceId: process.env.ELEVENLABS_VOICE_ID,
+        personality: process.env.TWITTER_BOT_PERSONALITY,
+        autoJoinSpaces: process.env.TWITTER_BOT_AUTO_JOIN === 'true',
+        tradingCommentaryEnabled: process.env.TWITTER_BOT_TRADING_COMMENTARY === 'true',
+      };
+
+      twitterBot = new TwitterSpacesBot(twitterConfig, agent);
+      console.log('🐦 Twitter Spaces Bot initialized\n');
+
+      // Start auto-join mode if enabled
+      if (twitterConfig.autoJoinSpaces) {
+        const searchQuery = process.env.TWITTER_BOT_SEARCH_QUERY || 'crypto trading solana';
+        console.log(`🤖 Starting auto-join mode (searching: "${searchQuery}")\n`);
+        twitterBot.startAutoJoinMode(searchQuery, 5);
+      }
+    } else {
+      console.log('⚠️  Twitter bot enabled but missing required API keys. Skipping initialization.\n');
+    }
+  }
+
   // Start web server
   const port = parseInt(process.env.PORT || '3000');
-  const webServer = new WebServer(agent, wallet, pumpFun, scheduler);
+  const webServer = new WebServer(agent, wallet, pumpFun, scheduler, twitterBot);
 
   await webServer.start(port);
   console.log(`🌐 Web interface available at http://localhost:${port}\n`);

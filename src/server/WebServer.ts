@@ -5,6 +5,7 @@ import { TradingAgent } from '../agent/TradingAgent';
 import { SolanaWallet } from '../wallet/SolanaWallet';
 import { PumpFunClient } from '../trading/PumpFunClient';
 import { TradingScheduler } from '../scheduler/TradingScheduler';
+import { TwitterSpacesBot } from '../twitter/TwitterSpacesBot';
 
 export interface ClientMessage {
   type: 'chat' | 'analyze' | 'execute_trade';
@@ -24,14 +25,16 @@ export class WebServer {
   private wallet: SolanaWallet;
   private pumpFun: PumpFunClient;
   private scheduler: TradingScheduler;
+  private twitterBot?: TwitterSpacesBot;
   private clients: Set<WebSocket> = new Set();
 
-  constructor(agent: TradingAgent, wallet: SolanaWallet, pumpFun: PumpFunClient, scheduler: TradingScheduler) {
+  constructor(agent: TradingAgent, wallet: SolanaWallet, pumpFun: PumpFunClient, scheduler: TradingScheduler, twitterBot?: TwitterSpacesBot) {
     this.app = express();
     this.agent = agent;
     this.wallet = wallet;
     this.pumpFun = pumpFun;
     this.scheduler = scheduler;
+    this.twitterBot = twitterBot;
 
     this.setupMiddleware();
     this.setupRoutes();
@@ -179,6 +182,92 @@ export class WebServer {
         const config = req.body;
         this.scheduler.updateConfig(config);
         res.json({ status: 'updated', config });
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    // Twitter Spaces Bot endpoints
+    this.app.get('/api/twitter/status', (req: Request, res: Response) => {
+      try {
+        if (!this.twitterBot) {
+          return res.json({ enabled: false, message: 'Twitter bot not initialized' });
+        }
+        const status = this.twitterBot.getStatus();
+        res.json({ enabled: true, ...status });
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    this.app.get('/api/twitter/search', async (req: Request, res: Response) => {
+      try {
+        if (!this.twitterBot) {
+          return res.status(400).json({ error: 'Twitter bot not initialized' });
+        }
+        const query = (req.query.q as string) || 'crypto trading';
+        const spaces = await this.twitterBot.searchLiveSpaces(query);
+        res.json({ spaces });
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    this.app.post('/api/twitter/join', async (req: Request, res: Response) => {
+      try {
+        if (!this.twitterBot) {
+          return res.status(400).json({ error: 'Twitter bot not initialized' });
+        }
+        const { spaceId } = req.body;
+        if (!spaceId) {
+          return res.status(400).json({ error: 'spaceId is required' });
+        }
+        const success = await this.twitterBot.joinSpace(spaceId);
+        res.json({ success, spaceId });
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    this.app.post('/api/twitter/leave', async (req: Request, res: Response) => {
+      try {
+        if (!this.twitterBot) {
+          return res.status(400).json({ error: 'Twitter bot not initialized' });
+        }
+        await this.twitterBot.leaveSpace();
+        res.json({ success: true });
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    this.app.post('/api/twitter/speak', async (req: Request, res: Response) => {
+      try {
+        if (!this.twitterBot) {
+          return res.status(400).json({ error: 'Twitter bot not initialized' });
+        }
+        const { message } = req.body;
+        if (!message) {
+          return res.status(400).json({ error: 'message is required' });
+        }
+        await this.twitterBot.generateAndSpeak(message);
+        res.json({ success: true });
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    this.app.post('/api/twitter/auto-join', async (req: Request, res: Response) => {
+      try {
+        if (!this.twitterBot) {
+          return res.status(400).json({ error: 'Twitter bot not initialized' });
+        }
+        const { query, intervalMinutes } = req.body;
+        await this.twitterBot.startAutoJoinMode(
+          query || 'crypto trading solana',
+          intervalMinutes || 5
+        );
+        res.json({ success: true, mode: 'auto-join', query, intervalMinutes });
       } catch (error: any) {
         res.status(500).json({ error: error.message });
       }
