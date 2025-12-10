@@ -25,8 +25,13 @@ async function main() {
   const wallet = new SolanaWallet(rpcUrl, privateKey);
   console.log(`💼 Wallet Address: ${wallet.getAddress()}`);
 
-  const balance = await wallet.getBalance();
-  console.log(`💰 Current Balance: ${balance.toFixed(4)} SOL\n`);
+  let balance = 0;
+  try {
+    balance = await wallet.getBalance();
+    console.log(`💰 Current Balance: ${balance.toFixed(4)} SOL\n`);
+  } catch (error) {
+    console.log(`⚠️  Could not fetch balance (network issue), continuing anyway...\n`);
+  }
 
   // Initialize pump.fun client with Jupiter API integration
   const priorityFee = parseFloat(process.env.PRIORITY_FEE || '0.00001');
