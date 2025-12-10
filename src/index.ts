@@ -66,7 +66,7 @@ async function main() {
   };
 
   const agent = new TradingAgent(openaiKey, wallet, pumpFun, agentConfig, memory);
-  console.log(`🤖 Trading Agent initialized with ${agentConfig.riskTolerance} risk tolerance (using OpenAI GPT-4)\n`);
+  console.log(`🤖 Trading Agent initialized with ${agentConfig.riskTolerance} risk tolerance (using OpenRouter GPT-4)\n`);
 
   // Initialize autonomous trading scheduler
   const schedulerConfig: TradingSchedulerConfig = {

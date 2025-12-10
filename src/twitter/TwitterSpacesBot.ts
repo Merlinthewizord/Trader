@@ -53,9 +53,14 @@ export class TwitterSpacesBot {
       accessSecret: config.twitterAccessSecret,
     });
 
-    // Initialize OpenAI client
+    // Initialize OpenAI client (using OpenRouter for chat, regular OpenAI for audio)
     this.openai = new OpenAI({
       apiKey: config.openaiApiKey,
+      baseURL: 'https://openrouter.ai/api/v1',
+      defaultHeaders: {
+        'HTTP-Referer': 'https://github.com/Merlinthewizord/Trader',
+        'X-Title': 'Twitter Spaces Bot'
+      }
     });
 
     // Initialize ElevenLabs if API key provided
@@ -292,7 +297,7 @@ export class TwitterSpacesBot {
       const recentHistory = this.conversationHistory.slice(-10);
 
       const completion = await this.openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: 'openai/gpt-4o',
         messages: [
           { role: 'system', content: systemPrompt },
           ...recentHistory,
