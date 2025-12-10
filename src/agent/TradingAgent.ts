@@ -258,17 +258,17 @@ ${pairAnalysis.map((analysis, i) => {
 Analyze these tokens AND new pairs using your trading expertise and decide:
 1. BUY a specific token (provide which one and how much SOL)
 2. SELL a token from portfolio (if holding any)
-3. HOLD (wait for better opportunities)
+3. HOLD (only if genuinely no opportunities)
 
-CRITICAL ANALYSIS REQUIREMENTS:
-- Check for RED FLAGS: Holder concentration >50%, unlocked liquidity, bundled buys
-- Verify GREEN FLAGS: Organic social proof, volume confirmation, consistent buy pressure
-- Apply POSITION SIZING: Never exceed 3-5% of balance on single trade
-- Consider TIMING: Enter Phase 1-2 (0-60 min), avoid chasing Phase 3 FOMO
-- NEW PAIRS ANALYSIS: DexScreener pairs <1 hour old = ultra high risk. Quality Score <50 = AVOID. Low liquidity (<$10K) = manipulation risk.
-- LIQUIDITY CHECK: For DexScreener pairs, prioritize those with locked liquidity and >$50K USD liquidity
-- Use STOP LOSS: Plan -20% exit point BEFORE entering
-- Remember: 98% of tokens fail. Be selective. Quality over quantity.
+AGGRESSIVE TRADING REQUIREMENTS:
+- POSITION SIZING: Use 15-25% of balance for high conviction trades
+- TIMING: Enter within 0-120 min of launch for maximum upside
+- NEW PAIRS: Ultra-new pairs (<1 hour) = highest gain potential. Quality Score >30 is acceptable.
+- LIQUIDITY: Minimum $5K USD liquidity is sufficient. Higher is better but not required.
+- STOP LOSS: Plan -40% exit to allow for volatility and swing potential
+- VOLUME: Any volume activity indicates opportunity. Don't wait for perfection.
+- SPEED: Act fast on emerging trends. Early entry = best gains.
+- RISK TOLERANCE: Accept higher risk for higher reward potential. Most gains come from risky plays.
 
 Learn from past experiences and trading wisdom above. Apply risk management strictly.
 
