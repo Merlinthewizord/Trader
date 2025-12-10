@@ -297,7 +297,7 @@ export class TwitterSpacesBot {
       const recentHistory = this.conversationHistory.slice(-10);
 
       const completion = await this.openai.chat.completions.create({
-        model: 'openai/gpt-4o',
+        model: 'gpt-oss-20b',
         messages: [
           { role: 'system', content: systemPrompt },
           ...recentHistory,

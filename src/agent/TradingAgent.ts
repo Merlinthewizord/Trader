@@ -86,7 +86,7 @@ export class TradingAgent {
     );
 
     const completion = await this.openai.chat.completions.create({
-      model: 'openai/gpt-4o',
+      model: 'gpt-oss-20b',
       max_tokens: 1024,
       messages: [
         { role: 'system', content: 'You are an expert Solana trading agent analyzing market conditions to make informed trading decisions.' },
@@ -138,7 +138,7 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
     ];
 
     const completion = await this.openai.chat.completions.create({
-      model: 'openai/gpt-4o',
+      model: 'gpt-oss-20b',
       max_tokens: 2048,
       messages: messages,
     });
