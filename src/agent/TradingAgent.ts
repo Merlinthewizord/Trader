@@ -1,10 +1,20 @@
 import OpenAI from 'openai';
-import { SolanaWallet } from '../wallet/SolanaWallet';
+import { SolanaWallet, TokenHolding } from '../wallet/SolanaWallet';
 import { PumpFunClient, TokenInfo } from '../trading/PumpFunClient';
 import { MemoryService } from '../memory/MemoryService';
 import { KnowledgeBase } from '../knowledge/KnowledgeBase';
 import { DexScreenerClient, DexPair } from '../trading/DexScreenerClient';
 import { BitQueryClient, TokenAnalytics } from '../trading/BitQueryClient';
+
+export interface PortfolioPosition {
+  mint: string;
+  symbol: string;
+  balance: number;
+  currentPrice: number;
+  value: number;
+  profitLoss?: number;
+  profitLossPercent?: number;
+}
 
 export interface TradeDecision {
   action: 'buy' | 'sell' | 'hold';
@@ -80,6 +90,18 @@ export class TradingAgent {
       };
     }
 
+    // Get current portfolio holdings
+    console.log('💼 Checking portfolio holdings...');
+    const holdings = await this.wallet.getTokenHoldings();
+    const portfolio = await this.getPortfolioWithPrices(holdings);
+
+    if (portfolio.length > 0) {
+      console.log(`📊 Current Portfolio: ${portfolio.length} tokens`);
+      portfolio.forEach(p => {
+        console.log(`   ${p.symbol}: ${p.balance.toFixed(2)} tokens, Value: $${p.value.toFixed(2)}, P/L: ${p.profitLossPercent?.toFixed(1) || 'N/A'}%`);
+      });
+    }
+
     const trendingTokens = await this.pumpFun.getTrendingTokens(10);
 
     // Fetch new pairs from DexScreener (last 6 hours)
@@ -122,7 +144,8 @@ export class TradingAgent {
       pairAnalysis,
       tradingStats,
       recentMemories,
-      bitQueryAnalytics
+      bitQueryAnalytics,
+      portfolio
     );
 
     const completion = await this.openai.chat.completions.create({
@@ -199,23 +222,38 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
     }
 
     try {
-      // Validate and clamp amount
       let tradeAmount = decision.amount;
+      let sellAllTokens = false;
 
-      // Enforce minimum
-      if (tradeAmount < this.config.minTradeAmountSOL) {
-        console.log(`⚠️  Trade amount ${tradeAmount} SOL below minimum ${this.config.minTradeAmountSOL} SOL. Using minimum.`);
-        tradeAmount = this.config.minTradeAmountSOL;
+      // For sell actions with "all", get the actual token balance
+      if (decision.action === 'sell' && (decision.amount as any) === 'all' && decision.tokenMint) {
+        console.log(`📤 Selling ALL tokens of ${decision.tokenSymbol}`);
+        const tokenBalance = await this.wallet.getTokenBalance(decision.tokenMint);
+
+        if (tokenBalance === 0) {
+          throw new Error(`No ${decision.tokenSymbol} tokens to sell!`);
+        }
+
+        // Sell the entire token balance
+        tradeAmount = tokenBalance;
+        sellAllTokens = true;
       }
 
-      // Enforce maximum
-      if (tradeAmount > this.config.maxTradeAmountSOL) {
-        console.log(`⚠️  Trade amount ${tradeAmount} SOL above maximum ${this.config.maxTradeAmountSOL} SOL. Using maximum.`);
-        tradeAmount = this.config.maxTradeAmountSOL;
-      }
-
-      // For buys, reserve 0.005 SOL for rent + fees
+      // Validate and clamp amount for BUY actions
       if (decision.action === 'buy') {
+        // Enforce minimum
+        if (tradeAmount < this.config.minTradeAmountSOL) {
+          console.log(`⚠️  Trade amount ${tradeAmount} SOL below minimum ${this.config.minTradeAmountSOL} SOL. Using minimum.`);
+          tradeAmount = this.config.minTradeAmountSOL;
+        }
+
+        // Enforce maximum
+        if (tradeAmount > this.config.maxTradeAmountSOL) {
+          console.log(`⚠️  Trade amount ${tradeAmount} SOL above maximum ${this.config.maxTradeAmountSOL} SOL. Using maximum.`);
+          tradeAmount = this.config.maxTradeAmountSOL;
+        }
+
+        // Reserve 0.005 SOL for rent + fees
         const balance = await this.wallet.getBalance();
         const maxAvailable = balance - 0.005; // Reserve for rent and fees
 
@@ -229,7 +267,7 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
         }
       }
 
-      console.log(`💰 Executing ${decision.action.toUpperCase()} with ${tradeAmount.toFixed(4)} SOL (original: ${decision.amount.toFixed(4)} SOL)`);
+      console.log(`💰 Executing ${decision.action.toUpperCase()} ${decision.action === 'sell' && sellAllTokens ? `ALL ${tradeAmount} tokens` : `with ${tradeAmount.toFixed(4)} SOL`} (original: ${decision.amount})`);
 
       const signature =
         decision.action === 'buy'
@@ -242,7 +280,7 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
           : await this.pumpFun.sellToken({
               tokenMint: decision.tokenMint,
               amount: tradeAmount,
-              denominatedInSol: true, // Sell for SOL
+              denominatedInSol: sellAllTokens ? false : true, // If selling all tokens, specify in tokens not SOL
               slippage: this.config.slippageBPS,
             });
 
@@ -265,13 +303,43 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
     }
   }
 
+  private async getPortfolioWithPrices(holdings: TokenHolding[]): Promise<PortfolioPosition[]> {
+    const portfolio: PortfolioPosition[] = [];
+
+    for (const holding of holdings) {
+      try {
+        // Get token info to get current price
+        const tokenInfo = await this.pumpFun.getTokenInfo(holding.mint);
+
+        if (tokenInfo) {
+          const currentPrice = tokenInfo.usdPrice || 0;
+          const value = holding.balance * currentPrice;
+
+          portfolio.push({
+            mint: holding.mint,
+            symbol: tokenInfo.symbol,
+            balance: holding.balance,
+            currentPrice: currentPrice,
+            value: value,
+            // P/L calculation would require knowing entry price - we'll add this later from memory
+          });
+        }
+      } catch (error) {
+        console.error(`Error getting price for token ${holding.mint}:`, error);
+      }
+    }
+
+    return portfolio;
+  }
+
   private buildMarketAnalysisPrompt(
     balance: number,
     tokens: TokenInfo[],
     pairAnalysis: Array<{ pair: DexPair; quality: { score: number; signals: string[]; warnings: string[] } }>,
     tradingStats: { totalTrades: number; successfulTrades: number; failedTrades: number; successRate: number },
     memories: string[],
-    bitQueryAnalytics?: Map<string, TokenAnalytics>
+    bitQueryAnalytics?: Map<string, TokenAnalytics>,
+    portfolio?: PortfolioPosition[]
   ): string {
     const memoriesSection = memories.length > 0
       ? `\n\nPast Trading Experiences (learn from these):\n${memories.map((m, i) => `${i + 1}. ${m}`).join('\n\n')}`
@@ -290,6 +358,18 @@ Current Portfolio:
 - Max Trade Amount: ${this.config.maxTradeAmountSOL} SOL
 - Usable Balance: ${Math.max(0, balance - 0.005).toFixed(4)} SOL (after reserving 0.005 SOL for fees)
 - Risk Tolerance: ${this.config.riskTolerance}
+
+${portfolio && portfolio.length > 0 ? `
+TOKEN HOLDINGS - ACTIVELY CONSIDER SELLING THESE:
+${portfolio.map((p, i) => `${i + 1}. ${p.symbol}
+   - Token Mint: ${p.mint}
+   - Balance: ${p.balance.toFixed(2)} tokens
+   - Current Price: $${p.currentPrice.toFixed(6)}
+   - Total Value: $${p.value.toFixed(2)}
+   - DECISION: Should you SELL this for profit, or HOLD for bigger gains?`).join('\n\n')}
+
+⚠️ IMPORTANT: You currently hold ${portfolio.length} token(s). For EACH token above, decide if you should SELL for profit or keep holding.
+` : '📭 No token holdings currently. Focus on finding BUY opportunities.\n'}
 
 Trading Performance:
 - Total Trades: ${tradingStats.totalTrades}
@@ -354,22 +434,27 @@ ${pairAnalysis.map((analysis, i) => {
 }).join('\n\n')}
 
 Analyze these tokens AND new pairs using your trading expertise and decide:
-1. BUY a specific token (provide which one and how much SOL)
-2. SELL a token from portfolio (if holding any)
+1. SELL a token from your portfolio (if you have holdings with good profit or to cut losses)
+2. BUY a specific token (provide which one and how much SOL)
 3. HOLD (only if genuinely no opportunities)
+
+PRIORITY: If you have token holdings, FIRST consider if any should be sold before looking for new buys!
 
 AGGRESSIVE TRADING REQUIREMENTS:
 - CRITICAL: MINIMUM TRADE AMOUNT IS ${this.config.minTradeAmountSOL} SOL - NEVER suggest amounts below this!
 - CRITICAL: MAXIMUM TRADE AMOUNT IS ${this.config.maxTradeAmountSOL} SOL - NEVER suggest amounts above this!
 - POSITION SIZING: Use 15-25% of USABLE balance (${Math.max(0, balance - 0.005).toFixed(4)} SOL) for high conviction trades
 - If usable balance < minimum trade amount, output "hold" action
-- TIMING: Enter within 0-120 min of launch for maximum upside
+- SELL STRATEGY: Take profits early and often! Even small gains are wins. Don't be greedy.
+- SELL SIGNALS: Consider selling if token value increased, volume dropping, or new better opportunities
+- TIMING (BUY): Enter within 0-120 min of launch for maximum upside
 - NEW PAIRS: Ultra-new pairs (<1 hour) = highest gain potential. Quality Score >30 is acceptable.
 - LIQUIDITY: Minimum $5K USD liquidity is sufficient. Higher is better but not required.
 - STOP LOSS: Plan -40% exit to allow for volatility and swing potential
 - VOLUME: Any volume activity indicates opportunity. Don't wait for perfection.
 - SPEED: Act fast on emerging trends. Early entry = best gains.
 - RISK TOLERANCE: Accept higher risk for higher reward potential. Most gains come from risky plays.
+- SELLING > BUYING: If you have holdings, strongly consider selling one before buying another!
 
 Learn from past experiences and trading wisdom above. Apply risk management strictly.
 
@@ -378,11 +463,13 @@ Respond in this exact JSON format:
   "action": "buy|sell|hold",
   "tokenMint": "token_address_if_buying_or_selling",
   "tokenSymbol": "TOKEN_SYMBOL",
-  "amount": amount_in_SOL,
-  "reasoning": "detailed explanation citing specific signals (volume, holder distribution, social proof, phase timing, red/green flags)",
+  "amount": amount_in_SOL_for_BUY_or_"all"_for_SELL,
+  "reasoning": "detailed explanation citing specific signals (volume, holder distribution, social proof, phase timing, profit target, etc.)",
   "confidence": 0-100,
   "riskLevel": "low|medium|high"
-}`;
+}
+
+IMPORTANT: For SELL actions, use "amount": "all" to sell your entire holding of that token.`;
   }
 
   private parseTradeDecision(response: string): TradeDecision {
@@ -400,13 +487,20 @@ Respond in this exact JSON format:
 
       const parsed = JSON.parse(jsonMatch[0]);
 
-      // Parse amount carefully - ensure it's a number
-      let amount = parsed.amount;
-      if (typeof amount === 'string') {
-        amount = parseFloat(amount);
-      }
-      if (isNaN(amount) || amount === undefined || amount === null) {
-        amount = 0;
+      // Parse amount carefully - handle "all" for sells or convert to number
+      let amount: number | string = parsed.amount;
+
+      if (typeof amount === 'string' && amount.toLowerCase() === 'all') {
+        // Keep as "all" for sell actions
+        amount = 'all';
+      } else {
+        // Convert to number for buy actions
+        if (typeof amount === 'string') {
+          amount = parseFloat(amount);
+        }
+        if (isNaN(amount as number) || amount === undefined || amount === null) {
+          amount = 0;
+        }
       }
 
       console.log(`🔍 Parsed AI decision: action=${parsed.action}, amount=${amount}, confidence=${parsed.confidence}`);
@@ -415,7 +509,7 @@ Respond in this exact JSON format:
         action: parsed.action || 'hold',
         tokenMint: parsed.tokenMint,
         tokenSymbol: parsed.tokenSymbol,
-        amount: amount,
+        amount: amount as number, // Will handle "all" in executeTrade
         reasoning: parsed.reasoning || 'No reasoning provided',
         confidence: parsed.confidence || 0,
         riskLevel: parsed.riskLevel || 'medium',

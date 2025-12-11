@@ -4,10 +4,17 @@ import {
   PublicKey,
   LAMPORTS_PER_SOL,
   Transaction,
-  sendAndConfirmTransaction
+  sendAndConfirmTransaction,
+  ParsedAccountData
 } from '@solana/web3.js';
-import { getAssociatedTokenAddress, getAccount } from '@solana/spl-token';
+import { getAssociatedTokenAddress, getAccount, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import bs58 from 'bs58';
+
+export interface TokenHolding {
+  mint: string;
+  balance: number;
+  decimals: number;
+}
 
 export class SolanaWallet {
   private connection: Connection;
@@ -86,6 +93,38 @@ export class SolanaWallet {
       }));
     } catch (error) {
       console.error('Error getting recent transactions:', error);
+      return [];
+    }
+  }
+
+  async getTokenHoldings(): Promise<TokenHolding[]> {
+    try {
+      const tokenAccounts = await this.connection.getParsedTokenAccountsByOwner(
+        this.publicKey,
+        { programId: TOKEN_PROGRAM_ID }
+      );
+
+      const holdings: TokenHolding[] = [];
+
+      for (const accountInfo of tokenAccounts.value) {
+        const parsedData = accountInfo.account.data as ParsedAccountData;
+        const tokenData = parsedData.parsed.info;
+
+        const balance = parseFloat(tokenData.tokenAmount.uiAmount || '0');
+
+        // Only include tokens with non-zero balance
+        if (balance > 0) {
+          holdings.push({
+            mint: tokenData.mint,
+            balance: balance,
+            decimals: tokenData.tokenAmount.decimals,
+          });
+        }
+      }
+
+      return holdings;
+    } catch (error) {
+      console.error('Error getting token holdings:', error);
       return [];
     }
   }
