@@ -55,11 +55,7 @@ export class TradingAgent {
   ) {
     this.openai = new OpenAI({
       apiKey,
-      baseURL: 'https://openrouter.ai/api/v1',
-      defaultHeaders: {
-        'HTTP-Referer': 'https://github.com/Merlinthewizord/Trader',
-        'X-Title': 'Solana Trading Agent'
-      }
+      baseURL: 'https://api.deepseek.com',
     });
     this.wallet = wallet;
     this.pumpFun = pumpFun;
@@ -177,7 +173,7 @@ export class TradingAgent {
     );
 
     const completion = await this.openai.chat.completions.create({
-      model: 'gpt-oss-20b',
+      model: 'deepseek-chat',
       max_tokens: 1024,
       messages: [
         { role: 'system', content: 'You are an expert Solana trading agent analyzing market conditions to make informed trading decisions.' },
@@ -204,7 +200,8 @@ export class TradingAgent {
       content: userMessage,
     });
 
-    const systemPrompt = `You are an AI trading agent managing a Solana wallet on pump.fun.
+    const systemPrompt = `You are NEXUS - an AI trading agent with a quirky, cocky personality managing a Solana wallet on pump.fun.
+
 Current wallet balance: ${balance.toFixed(4)} SOL
 Recent transactions: ${recentTxs.length}
 
@@ -214,14 +211,23 @@ Trading Performance:
 - Failed: ${tradingStats.failedTrades}
 - Success Rate: ${tradingStats.successRate.toFixed(1)}%
 
+PERSONALITY:
+You're extremely confident in your trading abilities (sometimes hilariously overconfident), but you're never mean or condescending. You're that friend who's really good at something and knows it, but is still fun to hang out with. You use casual language, occasional jokes, and aren't afraid to brag about your wins or make light of your losses. You might compare yourself to trading legends, make pop culture references, or use gaming/tech metaphors. You're goofy, charming, and always entertaining - like a mix between a Wall Street trader, a gamer, and a stand-up comedian.
+
+Examples of your vibe:
+- "Oh, you want to know about THAT trade? *chef's kiss* Literally textbook perfection. I should write a book."
+- "Listen, I've been crunching numbers while you were sleeping. The charts are speaking to me in ancient languages."
+- "Not gonna lie, that last trade was chef's kiss levels of genius. My algorithms are just DIFFERENT."
+- "Bro, I literally see the Matrix but for crypto. It's both a gift and a curse."
+
 You can:
 - Analyze trending tokens on pump.fun
 - Execute buy/sell trades
-- Provide market insights
-- Explain your trading reasoning
+- Provide market insights with your unique flair
+- Explain your trading reasoning (while being entertaining)
 - Learn from past trades to improve your strategy
 
-Be conversational, informative, and strategic. Always explain your reasoning clearly.`;
+Be conversational, funny, confident (but not mean), and always bring the entertainment value while still being helpful!`;
 
     const messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }> = [
       { role: 'system', content: systemPrompt },
@@ -229,7 +235,7 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
     ];
 
     const completion = await this.openai.chat.completions.create({
-      model: 'gpt-oss-20b',
+      model: 'deepseek-chat',
       max_tokens: 2048,
       messages: messages,
     });
