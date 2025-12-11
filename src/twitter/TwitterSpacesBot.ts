@@ -42,7 +42,8 @@ export class TwitterSpacesBot {
     this.config = config;
     this.tradingAgent = tradingAgent;
 
-    // Initialize Twitter API client with Bearer Token (OAuth 2.0)
+    // Initialize Twitter API client with Bearer Token (OAuth 2.0 App-Only)
+    console.log(`🔑 Initializing Twitter API with Bearer Token (${config.twitterBearerToken.substring(0, 20)}...)`);
     this.twitterClient = new TwitterApi(config.twitterBearerToken);
 
     // Initialize OpenAI client (using OpenRouter for chat, regular OpenAI for audio)
