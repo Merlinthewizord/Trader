@@ -86,18 +86,12 @@ async function main() {
   // Initialize Twitter Spaces Bot (optional)
   let twitterBot: TwitterSpacesBot | undefined;
   if (process.env.TWITTER_BOT_ENABLED === 'true') {
-    const twitterApiKey = process.env.TWITTER_API_KEY;
-    const twitterApiSecret = process.env.TWITTER_API_SECRET;
-    const twitterAccessToken = process.env.TWITTER_ACCESS_TOKEN;
-    const twitterAccessSecret = process.env.TWITTER_ACCESS_SECRET;
+    const twitterBearerToken = process.env.TWITTER_BEARER_TOKEN;
     const openaiApiKey = process.env.OPENAI_API_KEY;
 
-    if (twitterApiKey && twitterApiSecret && twitterAccessToken && twitterAccessSecret && openaiApiKey) {
+    if (twitterBearerToken && openaiApiKey) {
       const twitterConfig: TwitterSpacesBotConfig = {
-        twitterApiKey,
-        twitterApiSecret,
-        twitterAccessToken,
-        twitterAccessSecret,
+        twitterBearerToken,
         openaiApiKey,
         elevenLabsApiKey: process.env.ELEVENLABS_API_KEY,
         voiceId: process.env.ELEVENLABS_VOICE_ID,
@@ -107,7 +101,7 @@ async function main() {
       };
 
       twitterBot = new TwitterSpacesBot(twitterConfig, agent);
-      console.log('🐦 Twitter Spaces Bot initialized\n');
+      console.log('🐦 Twitter Spaces Bot initialized (OAuth 2.0)\n');
 
       // Start auto-join mode if enabled
       if (twitterConfig.autoJoinSpaces) {
@@ -116,7 +110,7 @@ async function main() {
         twitterBot.startAutoJoinMode(searchQuery, 5);
       }
     } else {
-      console.log('⚠️  Twitter bot enabled but missing required API keys. Skipping initialization.\n');
+      console.log('⚠️  Twitter bot enabled but missing TWITTER_BEARER_TOKEN. Skipping initialization.\n');
     }
   }
 
