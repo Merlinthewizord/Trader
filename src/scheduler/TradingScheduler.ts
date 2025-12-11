@@ -5,6 +5,7 @@ export interface TradingSchedulerConfig {
   intervalMinutes: number;
   autoExecute: boolean;
   minConfidenceForAutoTrade: number; // 0-100
+  minConfidenceForHighRisk: number; // 0-100
   enabled: boolean;
 }
 
@@ -203,8 +204,8 @@ export class TradingScheduler {
       return false;
     }
 
-    // Don't execute high-risk trades without very high confidence
-    if (decision.riskLevel === 'high' && decision.confidence < 80) {
+    // Don't execute high-risk trades without higher confidence
+    if (decision.riskLevel === 'high' && decision.confidence < this.config.minConfidenceForHighRisk) {
       return false;
     }
 

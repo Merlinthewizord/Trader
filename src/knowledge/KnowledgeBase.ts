@@ -164,33 +164,33 @@ export class KnowledgeBase {
   }): string[] {
     const guidance: string[] = [];
 
-    // Check holder concentration
-    if (tokenData.holderConcentration && tokenData.holderConcentration > 50) {
+    // Check holder concentration (much more lenient)
+    if (tokenData.holderConcentration && tokenData.holderConcentration > 80) {
       guidance.push(
-        '🚨 CRITICAL RED FLAG: Top holders own >50% of supply. This is a RUG PULL RISK. Recommend AVOID.'
+        '⚠️ Note: Top holders own >80% of supply. Higher risk but can still be profitable if caught early.'
       );
     }
 
     // Check volume
-    if (tokenData.volumeChange && tokenData.volumeChange > 2) {
-      guidance.push('✅ Volume confirms interest (>2x average). Positive signal for momentum.');
-    } else if (tokenData.volumeChange && tokenData.volumeChange < 0.5) {
-      guidance.push('⚠️ Low volume indicates weak interest or potential abandonment.');
+    if (tokenData.volumeChange && tokenData.volumeChange > 1) {
+      guidance.push('✅ Volume activity detected. Momentum building.');
+    } else if (tokenData.volumeChange && tokenData.volumeChange < 0.2) {
+      guidance.push('ℹ️ Low volume but early tokens often start slow.');
     }
 
     // Check age
     if (tokenData.age !== undefined) {
       if (tokenData.age < 1) {
-        guidance.push('⚡ Ultra-early token (<1 hour old). Highest risk, highest reward. Position size <2%.');
+        guidance.push('🚀 Ultra-early token (<1 hour old). MAXIMUM GAIN POTENTIAL. Go aggressive!');
       } else if (tokenData.age > 24) {
-        guidance.push('✅ Token survived 24+ hours. This is top 2%. Lower risk profile.');
+        guidance.push('✅ Token survived 24+ hours. Proven staying power.');
       }
     }
 
-    // Check liquidity
+    // Check liquidity (informational only, not blocking)
     if (tokenData.liquidityLocked === false) {
       guidance.push(
-        '🚨 CRITICAL RED FLAG: Liquidity NOT locked. Instant rug pull possible. AVOID or exit immediately.'
+        'ℹ️ Liquidity not locked. Monitor closely but doesn\'t prevent entry on early opportunities.'
       );
     }
 
@@ -201,20 +201,22 @@ export class KnowledgeBase {
    * Get exit strategy recommendation based on profit
    */
   getExitStrategy(profitMultiple: number): string {
-    if (profitMultiple >= 10) {
-      return 'SELL IMMEDIATELY: You\'ve hit 10x. This is the moonshot. Take profits now (at least 75%).';
+    if (profitMultiple >= 20) {
+      return 'MASSIVE WIN: 20x+! Take 50-75% profit and let rest ride for even bigger gains.';
+    } else if (profitMultiple >= 10) {
+      return 'EXCELLENT: 10x achieved. Consider taking 30-50% profit, hold rest for moonshot potential.';
     } else if (profitMultiple >= 5) {
-      return 'TAKE PROFIT: 5x achieved. Sell 25% per 3-5-Hold strategy. Trail remaining with 15% stop.';
+      return 'STRONG GAINS: 5x hit. Can take 25% profit but consider holding for bigger multiples.';
     } else if (profitMultiple >= 3) {
-      return 'SECURE GAINS: 3x hit. Sell 50% per 3-5-Hold strategy. Let rest run with tight trailing stop.';
+      return 'GOOD PROFIT: 3x reached. Hold for bigger gains or take small profit if momentum weakens.';
     } else if (profitMultiple >= 2) {
-      return 'CONSIDER PROFIT: 2x reached. Sell 30-50% to secure initial investment. Risk-free from here.';
-    } else if (profitMultiple <= -0.2) {
-      return 'STOP LOSS TRIGGERED: -20% from entry. Exit position immediately to preserve capital.';
-    } else if (profitMultiple > 0 && profitMultiple < 0.5) {
-      return 'SMALL GAIN: Consider holding if fundamentals strong, or take profit if momentum weakening.';
+      return 'EARLY PROFIT: 2x is just the start. Hold for bigger multiples unless red flags appear.';
+    } else if (profitMultiple <= -0.4) {
+      return 'STOP LOSS: -40% from entry. Consider exiting to preserve capital.';
+    } else if (profitMultiple > 0 && profitMultiple < 1) {
+      return 'BUILDING: Small gains, let it run. Patience pays in meme coins.';
     } else {
-      return 'MONITOR: Position between -20% and 2x. Hold if thesis intact, exit if losing conviction.';
+      return 'HOLD: Position still developing. Give it time to reach 5-10x targets.';
     }
   }
 
@@ -230,16 +232,14 @@ export class KnowledgeBase {
    */
   getPreTradeChecklist(): string[] {
     return [
-      'Contract verified on RugCheck (green flags only)',
-      'Liquidity locked or burned',
-      'Top holder <20% supply',
-      'Active social media with organic engagement',
-      'Trading volume >$50K in last hour',
-      'No honeypot indicators',
-      'Dev wallet renounced or burned',
-      'Stop loss plan in place',
-      'Exit targets defined',
-      'Position size <5% of portfolio',
+      'Token has any trading volume',
+      'Liquidity exists (minimum $5K)',
+      'Basic contract information available',
+      'Entry timing is early (<2 hours from launch)',
+      'Position sized aggressively (15-25% for high conviction)',
+      'Stop loss mentally set at -40%',
+      'Target gains: 10x+ minimum',
+      'Ready to act fast on momentum',
     ];
   }
 
@@ -248,18 +248,18 @@ export class KnowledgeBase {
    */
   getTradingWisdom(): string {
     return `
-CRITICAL TRADING WISDOM:
+AGGRESSIVE TRADING STRATEGY:
 
-1. SURVIVAL FIRST: Never risk more than you can lose. 98% of tokens fail.
-2. VOLUME CONFIRMS: Volume > 2x average = real interest. Volume spike + price drop = dump.
-3. RED FLAGS = EXIT: Unlocked liquidity, >50% holder concentration, bundled buys = scam.
-4. EARLY ENTRY: Enter 0-60 min after launch. Exit during FOMO peak (1-4 hours).
-5. TAKE PROFITS: 3x = sell 50%, 5x = sell 25%, 10x = sell rest. Don't be greedy.
-6. STOP LOSSES: -20% exit rule is sacred. Protect capital above all.
-7. POSITION SIZE: Max 3-5% per trade. You WILL lose often. Winners must be big.
-8. NO FOMO: Missed 10x? Don't chase. Another opportunity comes in 5 minutes.
-9. CHECK EVERYTHING: RugCheck, holder distribution, liquidity lock, social proof.
-10. TRUST DATA: Not hype. Organic growth + volume confirmation + locked liquidity = green light.
+1. HIGH RISK, HIGH REWARD: Trade aggressively to capture early gains. Speed matters more than perfection.
+2. VOLUME IS KING: Any volume activity = potential opportunity. Don't overthink it.
+3. ACCEPT RISK: Take calculated risks on new launches. You miss 100% of shots you don't take.
+4. ULTRA-EARLY ENTRY: Enter within 0-120 min of launch for maximum gains. Early bird gets the worm.
+5. RIDE THE WAVE: Hold for bigger multiples. Don't sell too early. 10x+ is the goal.
+6. FLEXIBLE STOPS: -40% stop loss gives room for volatility. Meme coins swing hard.
+7. AGGRESSIVE SIZING: Use 15-25% per trade for high conviction plays. Go big or go home.
+8. MOMENTUM TRADING: Volume spikes = opportunity. Jump on trends quickly.
+9. FAST DECISIONS: Speed > Perfection. Analyze quickly and act decisively.
+10. TRUST YOUR GUT: Data helps but don't let it paralyze you. Take action.
 `;
   }
 }

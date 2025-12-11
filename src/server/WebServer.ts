@@ -63,7 +63,7 @@ export class WebServer {
 
     this.app.get('/api/wallet/transactions', async (req: Request, res: Response) => {
       try {
-        const limit = parseInt(req.query.limit as string) || 10;
+        const limit = parseInt(req.query.limit as string) || 3;
         console.log(`📋 Fetching ${limit} recent transactions via Helius RPC...`);
 
         const transactions = await this.wallet.getRecentTransactions(limit);
@@ -363,7 +363,7 @@ export class WebServer {
   private async sendWalletUpdate(ws: WebSocket) {
     const balance = await this.wallet.getBalance();
     const address = this.wallet.getAddress();
-    const transactions = await this.wallet.getRecentTransactions(5);
+    const transactions = await this.wallet.getRecentTransactions(2);
 
     this.sendToClient(ws, {
       type: 'wallet_update',

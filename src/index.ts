@@ -65,14 +65,19 @@ async function main() {
     riskTolerance: (process.env.RISK_TOLERANCE as any) || 'moderate',
   };
 
-  const agent = new TradingAgent(openaiKey, wallet, pumpFun, agentConfig, memory);
+  // Get BitQuery API keys (optional)
+  const bitQueryV1Key = process.env.BITQUERY_API_KEY_V1;
+  const bitQueryV2Key = process.env.BITQUERY_API_KEY_V2;
+
+  const agent = new TradingAgent(openaiKey, wallet, pumpFun, agentConfig, memory, bitQueryV1Key, bitQueryV2Key);
   console.log(`🤖 Trading Agent initialized with ${agentConfig.riskTolerance} risk tolerance (using OpenRouter gpt-oss-20b)\n`);
 
   // Initialize autonomous trading scheduler
   const schedulerConfig: TradingSchedulerConfig = {
     intervalMinutes: parseFloat(process.env.TRADING_INTERVAL_MINUTES || '5'),
     autoExecute: process.env.AUTO_EXECUTE_TRADES === 'true',
-    minConfidenceForAutoTrade: parseInt(process.env.MIN_CONFIDENCE_AUTO_TRADE || '70'),
+    minConfidenceForAutoTrade: parseInt(process.env.MIN_CONFIDENCE_FOR_AUTO_TRADE || '70'),
+    minConfidenceForHighRisk: parseInt(process.env.MIN_CONFIDENCE_FOR_HIGH_RISK || '80'),
     enabled: process.env.AUTONOMOUS_TRADING_ENABLED !== 'false', // Enabled by default
   };
 
@@ -81,18 +86,12 @@ async function main() {
   // Initialize Twitter Spaces Bot (optional)
   let twitterBot: TwitterSpacesBot | undefined;
   if (process.env.TWITTER_BOT_ENABLED === 'true') {
-    const twitterApiKey = process.env.TWITTER_API_KEY;
-    const twitterApiSecret = process.env.TWITTER_API_SECRET;
-    const twitterAccessToken = process.env.TWITTER_ACCESS_TOKEN;
-    const twitterAccessSecret = process.env.TWITTER_ACCESS_SECRET;
+    const twitterBearerToken = process.env.TWITTER_BEARER_TOKEN;
     const openaiApiKey = process.env.OPENAI_API_KEY;
 
-    if (twitterApiKey && twitterApiSecret && twitterAccessToken && twitterAccessSecret && openaiApiKey) {
+    if (twitterBearerToken && openaiApiKey) {
       const twitterConfig: TwitterSpacesBotConfig = {
-        twitterApiKey,
-        twitterApiSecret,
-        twitterAccessToken,
-        twitterAccessSecret,
+        twitterBearerToken,
         openaiApiKey,
         elevenLabsApiKey: process.env.ELEVENLABS_API_KEY,
         voiceId: process.env.ELEVENLABS_VOICE_ID,
@@ -102,7 +101,7 @@ async function main() {
       };
 
       twitterBot = new TwitterSpacesBot(twitterConfig, agent);
-      console.log('🐦 Twitter Spaces Bot initialized\n');
+      console.log('🐦 Twitter Spaces Bot initialized (OAuth 2.0)\n');
 
       // Start auto-join mode if enabled
       if (twitterConfig.autoJoinSpaces) {
@@ -111,7 +110,7 @@ async function main() {
         twitterBot.startAutoJoinMode(searchQuery, 5);
       }
     } else {
-      console.log('⚠️  Twitter bot enabled but missing required API keys. Skipping initialization.\n');
+      console.log('⚠️  Twitter bot enabled but missing TWITTER_BEARER_TOKEN. Skipping initialization.\n');
     }
   }
 
