@@ -4,6 +4,7 @@ import { PumpFunClient, TokenInfo } from '../trading/PumpFunClient';
 import { MemoryService } from '../memory/MemoryService';
 import { KnowledgeBase } from '../knowledge/KnowledgeBase';
 import { DexScreenerClient, DexPair } from '../trading/DexScreenerClient';
+import { BitQueryClient, TokenAnalytics } from '../trading/BitQueryClient';
 
 export interface TradeDecision {
   action: 'buy' | 'sell' | 'hold';
@@ -30,6 +31,7 @@ export class TradingAgent {
   private memory: MemoryService;
   private knowledgeBase: KnowledgeBase;
   private dexScreener: DexScreenerClient;
+  private bitQuery?: BitQueryClient;
   private conversationHistory: { role: 'user' | 'assistant' | 'system'; content: string }[] = [];
 
   constructor(
@@ -37,7 +39,9 @@ export class TradingAgent {
     wallet: SolanaWallet,
     pumpFun: PumpFunClient,
     config: AgentConfig,
-    memory: MemoryService
+    memory: MemoryService,
+    bitQueryV1Key?: string,
+    bitQueryV2Key?: string
   ) {
     this.openai = new OpenAI({
       apiKey,
@@ -53,6 +57,12 @@ export class TradingAgent {
     this.memory = memory;
     this.knowledgeBase = new KnowledgeBase();
     this.dexScreener = new DexScreenerClient();
+
+    // Initialize BitQuery if keys are provided
+    if (bitQueryV1Key && bitQueryV2Key) {
+      this.bitQuery = new BitQueryClient(bitQueryV1Key, bitQueryV2Key);
+      console.log('🔍 BitQuery analytics enabled');
+    }
   }
 
   async analyzeMarket(): Promise<TradeDecision> {
@@ -70,6 +80,22 @@ export class TradingAgent {
       quality: this.dexScreener.analyzePairQuality(pair),
     }));
 
+    // Fetch BitQuery analytics for top tokens (if available)
+    let bitQueryAnalytics: Map<string, TokenAnalytics> = new Map();
+    if (this.bitQuery) {
+      console.log('🔍 Fetching BitQuery on-chain analytics...');
+      const topTokens = [...trendingTokens.slice(0, 3), ...pairAnalysis.slice(0, 2).map(p => ({ id: p.pair.baseToken.address }))];
+
+      for (const token of topTokens) {
+        try {
+          const analytics = await this.bitQuery.getTokenAnalytics(token.id);
+          bitQueryAnalytics.set(token.id, analytics);
+        } catch (error) {
+          // Continue if BitQuery fails for a token
+        }
+      }
+    }
+
     // Retrieve relevant memories from past trades
     const tradingStats = await this.memory.getTradingStats();
     const recentMemories = await this.memory.getRelevantMemories(
@@ -82,7 +108,8 @@ export class TradingAgent {
       trendingTokens,
       pairAnalysis,
       tradingStats,
-      recentMemories
+      recentMemories,
+      bitQueryAnalytics
     );
 
     const completion = await this.openai.chat.completions.create({
@@ -198,7 +225,8 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
     tokens: TokenInfo[],
     pairAnalysis: Array<{ pair: DexPair; quality: { score: number; signals: string[]; warnings: string[] } }>,
     tradingStats: { totalTrades: number; successfulTrades: number; failedTrades: number; successRate: number },
-    memories: string[]
+    memories: string[],
+    bitQueryAnalytics?: Map<string, TokenAnalytics>
   ): string {
     const memoriesSection = memories.length > 0
       ? `\n\nPast Trading Experiences (learn from these):\n${memories.map((m, i) => `${i + 1}. ${m}`).join('\n\n')}`
@@ -224,7 +252,18 @@ Trading Performance:
 ${memoriesSection}
 
 Top Trending Tokens (Pump.fun):
-${tokens.map((t, i) => `${i + 1}. ${t.symbol} (${t.name})
+${tokens.map((t, i) => {
+  const analytics = bitQueryAnalytics?.get(t.id);
+  let bitQueryInfo = '';
+  if (analytics) {
+    bitQueryInfo = `
+   📊 ON-CHAIN ANALYTICS (BitQuery):
+   - Holder Concentration: ${analytics.holderConcentration.toFixed(1)}% (top 10 holders)
+   - Unique Traders (24h): ${analytics.uniqueTraders24h}
+   - On-chain Volume (24h): $${analytics.volume24h.toLocaleString()}
+   - Trade Count (24h): ${analytics.trades24h}`;
+  }
+  return `${i + 1}. ${t.symbol} (${t.name})
    - Mint: ${t.id}
    - Price: $${t.usdPrice?.toFixed(6) || 'N/A'}
    - Market Cap: $${t.mcap?.toLocaleString() || 'N/A'}
@@ -232,13 +271,25 @@ ${tokens.map((t, i) => `${i + 1}. ${t.symbol} (${t.name})
    - 24h Change: ${t.stats24h?.priceChange?.toFixed(2) || 'N/A'}%
    - Holders: ${t.holderCount?.toLocaleString() || 'N/A'}
    - Organic Score: ${t.organicScore?.toFixed(1) || 'N/A'} (${t.organicScoreLabel || 'N/A'})
-   - Verified: ${t.isVerified ? 'Yes' : 'No'}`).join('\n\n')}
+   - Verified: ${t.isVerified ? 'Yes' : 'No'}${bitQueryInfo}`;
+}).join('\n\n')}
 
 NEW Solana Pairs from DexScreener (Last 6 Hours):
 ${pairAnalysis.map((analysis, i) => {
   const p = analysis.pair;
   const q = analysis.quality;
   const ageHours = p.pairCreatedAt ? ((Date.now() - p.pairCreatedAt) / (1000 * 60 * 60)).toFixed(1) : 'N/A';
+
+  const analytics = bitQueryAnalytics?.get(p.baseToken.address);
+  let bitQueryInfo = '';
+  if (analytics) {
+    bitQueryInfo = `
+   📊 ON-CHAIN ANALYTICS (BitQuery):
+   - Holder Concentration: ${analytics.holderConcentration.toFixed(1)}% (top 10 holders)
+   - Unique Traders (24h): ${analytics.uniqueTraders24h}
+   - On-chain Volume (24h): $${analytics.volume24h.toLocaleString()}
+   - Trade Count (24h): ${analytics.trades24h}`;
+  }
 
   return `${i + 1}. ${p.baseToken.symbol}/${p.quoteToken.symbol} (${p.dexId})
    - Pair Address: ${p.pairAddress}
@@ -252,7 +303,7 @@ ${pairAnalysis.map((analysis, i) => {
    - 24h Txns: ${(p.txns?.h24?.buys || 0) + (p.txns?.h24?.sells || 0)} (${p.txns?.h24?.buys || 0} buys, ${p.txns?.h24?.sells || 0} sells)
    - Quality Score: ${q.score}/100
    - Signals: ${q.signals.length > 0 ? q.signals.join(', ') : 'None'}
-   - Warnings: ${q.warnings.length > 0 ? q.warnings.join(', ') : 'None'}`;
+   - Warnings: ${q.warnings.length > 0 ? q.warnings.join(', ') : 'None'}${bitQueryInfo}`;
 }).join('\n\n')}
 
 Analyze these tokens AND new pairs using your trading expertise and decide:

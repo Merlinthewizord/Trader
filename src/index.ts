@@ -65,7 +65,11 @@ async function main() {
     riskTolerance: (process.env.RISK_TOLERANCE as any) || 'moderate',
   };
 
-  const agent = new TradingAgent(openaiKey, wallet, pumpFun, agentConfig, memory);
+  // Get BitQuery API keys (optional)
+  const bitQueryV1Key = process.env.BITQUERY_API_KEY_V1;
+  const bitQueryV2Key = process.env.BITQUERY_API_KEY_V2;
+
+  const agent = new TradingAgent(openaiKey, wallet, pumpFun, agentConfig, memory, bitQueryV1Key, bitQueryV2Key);
   console.log(`🤖 Trading Agent initialized with ${agentConfig.riskTolerance} risk tolerance (using OpenRouter gpt-oss-20b)\n`);
 
   // Initialize autonomous trading scheduler
