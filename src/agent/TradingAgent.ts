@@ -20,7 +20,7 @@ export interface TradeDecision {
   action: 'buy' | 'sell' | 'hold';
   tokenMint?: string;
   tokenSymbol?: string;
-  amount?: number;
+  amount?: number | 'all';
   reasoning: string;
   confidence: number;
   riskLevel: 'low' | 'medium' | 'high';
@@ -78,22 +78,50 @@ export class TradingAgent {
   async analyzeMarket(): Promise<TradeDecision> {
     const balance = await this.wallet.getBalance();
 
+    // Get current portfolio holdings first
+    console.log('💼 Checking portfolio holdings...');
+    const holdings = await this.wallet.getTokenHoldings();
+    const portfolio = await this.getPortfolioWithPrices(holdings);
+
     // Check if we have enough balance to trade
     const usableBalance = Math.max(0, balance - 0.005); // Reserve for fees
     if (usableBalance < this.config.minTradeAmountSOL) {
       console.log(`⚠️  Insufficient balance for trading. Need ${this.config.minTradeAmountSOL + 0.005} SOL minimum, have ${balance.toFixed(4)} SOL.`);
+
+      // If we have token holdings, sell one to get SOL back
+      if (portfolio.length > 0) {
+        console.log('💡 Low on SOL but have token holdings. Suggesting to sell a token to get more SOL...');
+
+        // Find the best token to sell (prioritize: most profitable, or largest holding)
+        let bestToSell = portfolio[0];
+        for (const token of portfolio) {
+          // Prefer tokens with profit, or if no profit, prefer the largest holding
+          const currentProfit = token.profitLossPercent || -100;
+          const bestProfit = bestToSell.profitLossPercent || -100;
+
+          if (currentProfit > bestProfit || (currentProfit === bestProfit && token.value > bestToSell.value)) {
+            bestToSell = token;
+          }
+        }
+
+        return {
+          action: 'sell',
+          tokenMint: bestToSell.mint,
+          tokenSymbol: bestToSell.symbol,
+          amount: 'all',
+          reasoning: `Out of SOL for trading (${balance.toFixed(4)} SOL). Selling ${bestToSell.symbol} (${bestToSell.profitLossPercent?.toFixed(1) || 'unknown'}% P/L, $${bestToSell.value.toFixed(2)} value) to get more SOL for future trades.`,
+          confidence: 95,
+          riskLevel: 'low',
+        };
+      }
+
       return {
         action: 'hold',
-        reasoning: `Insufficient balance for trading. Current: ${balance.toFixed(4)} SOL. Need at least ${(this.config.minTradeAmountSOL + 0.005).toFixed(4)} SOL (${this.config.minTradeAmountSOL} trade + 0.005 fees).`,
+        reasoning: `Insufficient balance for trading and no tokens to sell. Current: ${balance.toFixed(4)} SOL. Need at least ${(this.config.minTradeAmountSOL + 0.005).toFixed(4)} SOL (${this.config.minTradeAmountSOL} trade + 0.005 fees).`,
         confidence: 100,
         riskLevel: 'low',
       };
     }
-
-    // Get current portfolio holdings
-    console.log('💼 Checking portfolio holdings...');
-    const holdings = await this.wallet.getTokenHoldings();
-    const portfolio = await this.getPortfolioWithPrices(holdings);
 
     if (portfolio.length > 0) {
       console.log(`📊 Current Portfolio: ${portfolio.length} tokens`);
@@ -222,11 +250,11 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
     }
 
     try {
-      let tradeAmount = decision.amount;
+      let tradeAmount: number;
       let sellAllTokens = false;
 
       // For sell actions with "all", get the actual token balance
-      if (decision.action === 'sell' && (decision.amount as any) === 'all' && decision.tokenMint) {
+      if (decision.action === 'sell' && decision.amount === 'all' && decision.tokenMint) {
         console.log(`📤 Selling ALL tokens of ${decision.tokenSymbol}`);
         const tokenBalance = await this.wallet.getTokenBalance(decision.tokenMint);
 
@@ -237,6 +265,10 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
         // Sell the entire token balance
         tradeAmount = tokenBalance;
         sellAllTokens = true;
+      } else if (typeof decision.amount === 'number') {
+        tradeAmount = decision.amount;
+      } else {
+        throw new Error('Trade amount must be specified as a number or "all"');
       }
 
       // Validate and clamp amount for BUY actions

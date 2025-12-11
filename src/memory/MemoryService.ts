@@ -6,7 +6,7 @@ export interface TradeRecord {
   action: 'buy' | 'sell' | 'hold';
   tokenMint?: string;
   tokenSymbol?: string;
-  amount?: number;
+  amount?: number | 'all';
   reasoning: string;
   confidence: number;
   riskLevel: string;
@@ -217,7 +217,7 @@ Lesson learned: ${lessonLearned}`;
     }
 
     if (trade.amount) {
-      text += ` for ${trade.amount.toFixed(4)} SOL`;
+      text += ` for ${typeof trade.amount === 'number' ? trade.amount.toFixed(4) + ' SOL' : 'ALL tokens'}`;
     }
 
     text += `.\nReasoning: ${trade.reasoning}`;
