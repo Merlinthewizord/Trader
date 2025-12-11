@@ -35,30 +35,30 @@ export function ChatPanel({ messages, onSendMessage, connected }: ChatPanelProps
   return (
     <div className="chat-panel">
       <div className="chat-header">
-        <span className="terminal-prompt">agent@solana:~$</span>
+        <span className="terminal-prompt">SOLANA TRADING AGENT</span>
         <span className={`status ${connected ? 'connected' : 'disconnected'}`}>
-          {connected ? '● ONLINE' : '○ OFFLINE'}
+          {connected ? 'ONLINE' : 'OFFLINE'}
         </span>
       </div>
 
       <div className="messages">
         {messages.map((msg) => (
           <div key={msg.id} className={`message ${msg.role}`}>
-            <span className="timestamp">[{formatTime(msg.timestamp)}]</span>
-            <span className="role">{msg.role === 'user' ? 'YOU' : 'AGENT'}:</span>
-            <span className="content">{msg.content}</span>
+            <div className="role">{msg.role === 'user' ? 'YOU' : 'AGENT'}</div>
+            <div className="content">{msg.content}</div>
+            <div className="timestamp">{formatTime(msg.timestamp)}</div>
           </div>
         ))}
         <div ref={messagesEndRef} />
       </div>
 
       <form className="input-area" onSubmit={handleSubmit}>
-        <span className="prompt">{'>'}</span>
+        <span className="prompt">›</span>
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={connected ? "Type a message... (try 'analyze')" : 'Connecting...'}
+          placeholder={connected ? "Message the agent..." : 'Connecting to server...'}
           disabled={!connected}
           autoFocus
         />

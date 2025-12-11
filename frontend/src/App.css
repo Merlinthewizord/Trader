@@ -1,26 +1,114 @@
 .app {
   width: 100vw;
   height: 100vh;
-  background: #0a0e27;
   overflow: hidden;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .container {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 20px;
   height: 100%;
   width: 100%;
+  max-width: 2000px;
+  max-height: 1200px;
 }
 
 .left-panel,
 .right-panel {
   height: 100%;
   overflow: hidden;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    0 8px 32px 0 rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.left-panel:hover,
+.right-panel:hover {
+  border-color: rgba(0, 255, 65, 0.2);
+  box-shadow:
+    0 8px 32px 0 rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(0, 255, 65, 0.1),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Elegant corner accents */
+.left-panel::before,
+.right-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40px;
+  height: 40px;
+  border-top: 2px solid var(--bond-gold);
+  border-left: 2px solid var(--bond-gold);
+  border-radius: 16px 0 0 0;
+  opacity: 0.4;
+  transition: opacity 0.3s ease;
+}
+
+.left-panel:hover::before,
+.right-panel:hover::before {
+  opacity: 0.8;
+}
+
+.left-panel::after,
+.right-panel::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 40px;
+  height: 40px;
+  border-bottom: 2px solid var(--bond-gold);
+  border-right: 2px solid var(--bond-gold);
+  border-radius: 0 0 16px 0;
+  opacity: 0.4;
+  transition: opacity 0.3s ease;
+}
+
+.left-panel:hover::after,
+.right-panel:hover::after {
+  opacity: 0.8;
+}
+
+@media (max-width: 1200px) {
+  .app {
+    padding: 12px;
+  }
+
+  .container {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1.2fr 1fr;
+    gap: 12px;
+  }
 }
 
 @media (max-width: 768px) {
+  .app {
+    padding: 8px;
+  }
+
   .container {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .left-panel::before,
+  .right-panel::before,
+  .left-panel::after,
+  .right-panel::after {
+    width: 30px;
+    height: 30px;
   }
 }

@@ -19,15 +19,15 @@ export function Dashboard({ balance, thoughts, trades }: DashboardProps) {
   const getThoughtIcon = (type: AgentThought['type']) => {
     switch (type) {
       case 'analysis':
-        return '🔍';
+        return '◆';
       case 'decision':
-        return '🤔';
+        return '◇';
       case 'execution':
-        return '⚡';
+        return '▸';
       case 'error':
-        return '❌';
+        return '✕';
       default:
-        return '💭';
+        return '○';
     }
   };
 
@@ -35,18 +35,18 @@ export function Dashboard({ balance, thoughts, trades }: DashboardProps) {
     <div className="dashboard">
       <div className="dashboard-section wallet-section">
         <div className="section-header">
-          <span className="section-title">💰 WALLET</span>
+          <span className="section-title">Wallet</span>
         </div>
         <div className="section-content">
           {balance ? (
             <>
               <div className="balance-item main">
-                <span className="label">SOL Balance:</span>
+                <span className="label">Balance</span>
                 <span className="value">{balance.sol.toFixed(4)} SOL</span>
               </div>
               {balance.tokens.length > 0 && (
                 <div className="tokens">
-                  <div className="label">Token Holdings:</div>
+                  <div className="label">Token Holdings</div>
                   {balance.tokens.map((token) => (
                     <div key={token.mint} className="token-item">
                       <span className="token-symbol">{token.symbol}</span>
@@ -64,7 +64,7 @@ export function Dashboard({ balance, thoughts, trades }: DashboardProps) {
 
       <div className="dashboard-section trades-section">
         <div className="section-header">
-          <span className="section-title">📊 RECENT TRADES</span>
+          <span className="section-title">Recent Trades</span>
         </div>
         <div className="section-content">
           {trades.length > 0 ? (
@@ -88,7 +88,7 @@ export function Dashboard({ balance, thoughts, trades }: DashboardProps) {
 
       <div className="dashboard-section thoughts-section">
         <div className="section-header">
-          <span className="section-title">🧠 AGENT REASONING</span>
+          <span className="section-title">Agent Reasoning</span>
         </div>
         <div className="section-content thoughts-content">
           {thoughts.length > 0 ? (
