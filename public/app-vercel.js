@@ -13,6 +13,7 @@ class TradingTerminal {
       transactionsContainer: document.getElementById('transactions-container'),
       connectionStatus: document.getElementById('connection-status'),
       tradingStatus: document.getElementById('trading-status'),
+      timestamp: document.getElementById('timestamp'),
     };
 
     this.init();
@@ -22,9 +23,30 @@ class TradingTerminal {
     this.setupEventListeners();
     this.connectWebSocket();
     this.updateTradingStatus();
+    this.updateTimestamp();
 
     // Poll wallet balance every 30 seconds as backup
     this.pollingInterval = setInterval(() => this.updateWalletInfo(), 30000);
+
+    // Update timestamp every second
+    setInterval(() => this.updateTimestamp(), 1000);
+  }
+
+  updateTimestamp() {
+    if (!this.elements.timestamp) return;
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('en-US', {
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+    const dateString = now.toLocaleDateString('en-US', {
+      month: 'short',
+      day: '2-digit',
+      year: 'numeric'
+    });
+    this.elements.timestamp.textContent = `${dateString} ${timeString}`;
   }
 
   connectWebSocket() {
@@ -119,7 +141,7 @@ class TradingTerminal {
       this.elements.solBalance.textContent = data.balance.toFixed(4);
     }
     if (data.address) {
-      this.elements.walletAddress.textContent = `Address: ${data.address}`;
+      this.elements.walletAddress.innerHTML = `<span class="address-label">ADDRESS:</span> <span class="address-value">${data.address}</span>`;
     }
   }
 
@@ -284,7 +306,7 @@ class TradingTerminal {
 
       if (balanceResponse.ok) {
         this.elements.solBalance.textContent = balanceData.balance.toFixed(4);
-        this.elements.walletAddress.textContent = `Address: ${balanceData.address}`;
+        this.elements.walletAddress.innerHTML = `<span class="address-label">ADDRESS:</span> <span class="address-value">${balanceData.address}</span>`;
       }
 
       const txResponse = await fetch('/api/wallet/transactions?limit=5');
