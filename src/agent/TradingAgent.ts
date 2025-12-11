@@ -55,11 +55,7 @@ export class TradingAgent {
   ) {
     this.openai = new OpenAI({
       apiKey,
-      baseURL: 'https://openrouter.ai/api/v1',
-      defaultHeaders: {
-        'HTTP-Referer': 'https://github.com/Merlinthewizord/Trader',
-        'X-Title': 'Solana Trading Agent'
-      }
+      baseURL: 'https://api.deepseek.com',
     });
     this.wallet = wallet;
     this.pumpFun = pumpFun;
@@ -177,7 +173,7 @@ export class TradingAgent {
     );
 
     const completion = await this.openai.chat.completions.create({
-      model: 'gpt-oss-20b',
+      model: 'deepseek-chat',
       max_tokens: 1024,
       messages: [
         { role: 'system', content: 'You are an expert Solana trading agent analyzing market conditions to make informed trading decisions.' },
@@ -229,7 +225,7 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
     ];
 
     const completion = await this.openai.chat.completions.create({
-      model: 'gpt-oss-20b',
+      model: 'deepseek-chat',
       max_tokens: 2048,
       messages: messages,
     });

@@ -70,7 +70,7 @@ async function main() {
   const bitQueryV2Key = process.env.BITQUERY_API_KEY_V2;
 
   const agent = new TradingAgent(openaiKey, wallet, pumpFun, agentConfig, memory, bitQueryV1Key, bitQueryV2Key);
-  console.log(`🤖 Trading Agent initialized with ${agentConfig.riskTolerance} risk tolerance (using OpenRouter gpt-oss-20b)\n`);
+  console.log(`🤖 Trading Agent initialized with ${agentConfig.riskTolerance} risk tolerance (using DeepSeek deepseek-chat)\n`);
 
   // Initialize autonomous trading scheduler
   const schedulerConfig: TradingSchedulerConfig = {
