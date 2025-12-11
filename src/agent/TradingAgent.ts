@@ -186,17 +186,49 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
     }
 
     try {
+      // Validate and clamp amount
+      let tradeAmount = decision.amount;
+
+      // Enforce minimum
+      if (tradeAmount < this.config.minTradeAmountSOL) {
+        console.log(`⚠️  Trade amount ${tradeAmount} SOL below minimum ${this.config.minTradeAmountSOL} SOL. Using minimum.`);
+        tradeAmount = this.config.minTradeAmountSOL;
+      }
+
+      // Enforce maximum
+      if (tradeAmount > this.config.maxTradeAmountSOL) {
+        console.log(`⚠️  Trade amount ${tradeAmount} SOL above maximum ${this.config.maxTradeAmountSOL} SOL. Using maximum.`);
+        tradeAmount = this.config.maxTradeAmountSOL;
+      }
+
+      // For buys, reserve 0.005 SOL for rent + fees
+      if (decision.action === 'buy') {
+        const balance = await this.wallet.getBalance();
+        const maxAvailable = balance - 0.005; // Reserve for rent and fees
+
+        if (tradeAmount > maxAvailable) {
+          console.log(`⚠️  Trade amount ${tradeAmount} SOL exceeds available balance. Using ${maxAvailable.toFixed(4)} SOL instead.`);
+          tradeAmount = Math.max(this.config.minTradeAmountSOL, maxAvailable);
+        }
+
+        if (tradeAmount < this.config.minTradeAmountSOL) {
+          throw new Error(`Insufficient balance. Need at least ${this.config.minTradeAmountSOL + 0.005} SOL (${this.config.minTradeAmountSOL} trade + 0.005 rent/fees). Current: ${balance.toFixed(4)} SOL`);
+        }
+      }
+
+      console.log(`💰 Executing ${decision.action.toUpperCase()} with ${tradeAmount.toFixed(4)} SOL (original: ${decision.amount.toFixed(4)} SOL)`);
+
       const signature =
         decision.action === 'buy'
           ? await this.pumpFun.buyToken({
               tokenMint: decision.tokenMint,
-              amount: decision.amount,
+              amount: tradeAmount,
               denominatedInSol: true, // Buy with SOL
               slippage: this.config.slippageBPS,
             })
           : await this.pumpFun.sellToken({
               tokenMint: decision.tokenMint,
-              amount: decision.amount,
+              amount: tradeAmount,
               denominatedInSol: true, // Sell for SOL
               slippage: this.config.slippageBPS,
             });
@@ -349,11 +381,23 @@ Respond in this exact JSON format:
       }
 
       const parsed = JSON.parse(jsonMatch[0]);
+
+      // Parse amount carefully - ensure it's a number
+      let amount = parsed.amount;
+      if (typeof amount === 'string') {
+        amount = parseFloat(amount);
+      }
+      if (isNaN(amount) || amount === undefined || amount === null) {
+        amount = 0;
+      }
+
+      console.log(`🔍 Parsed AI decision: action=${parsed.action}, amount=${amount}, confidence=${parsed.confidence}`);
+
       return {
         action: parsed.action || 'hold',
         tokenMint: parsed.tokenMint,
         tokenSymbol: parsed.tokenSymbol,
-        amount: parsed.amount,
+        amount: amount,
         reasoning: parsed.reasoning || 'No reasoning provided',
         confidence: parsed.confidence || 0,
         riskLevel: parsed.riskLevel || 'medium',
