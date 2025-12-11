@@ -3,76 +3,184 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Solana Trading Agent Terminal</title>
+  <title>NEXUS | Autonomous Trading Protocol</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+  <!-- Background Effects -->
+  <div class="background-grid"></div>
+  <div class="scan-line"></div>
+
+  <!-- Main Container -->
   <div class="container">
-    <!-- Left Panel: Chat Interface -->
-    <div class="panel left-panel">
-      <div class="panel-header">
-        <h2>💬 Agent Chat</h2>
-        <div class="header-controls">
-          <div class="status-indicator connected" id="connection-status">
-            <span class="dot"></span>
-            <span class="status-text">Connected</span>
+    <!-- Header -->
+    <header class="main-header">
+      <div class="header-left">
+        <div class="logo">
+          <span class="logo-icon">◈</span>
+          <span class="logo-text">NEXUS</span>
+          <span class="logo-subtitle">AUTONOMOUS PROTOCOL</span>
+        </div>
+      </div>
+      <div class="header-center">
+        <div class="system-status">
+          <div class="status-item">
+            <div class="status-indicator connected" id="connection-status">
+              <span class="pulse-ring"></span>
+              <span class="pulse-dot"></span>
+            </div>
+            <span class="status-label">NETWORK</span>
           </div>
-          <div class="status-indicator" id="trading-status">
-            <span class="dot"></span>
-            <span class="status-text">Checking...</span>
+          <div class="status-item">
+            <div class="status-indicator" id="trading-status">
+              <span class="pulse-ring"></span>
+              <span class="pulse-dot"></span>
+            </div>
+            <span class="status-label">TRADING</span>
           </div>
         </div>
       </div>
+      <div class="header-right">
+        <div class="timestamp" id="timestamp">LOADING...</div>
+      </div>
+    </header>
 
-      <div class="chat-container" id="chat-container">
-        <div class="welcome-message">
-          <p>🤖 <strong>Autonomous Solana Trading Bot</strong> online</p>
-          <p>The bot continuously monitors the market and makes trading decisions every 5 minutes.</p>
-          <p>Watch the activity feed below for real-time trading updates.</p>
+    <!-- Main Content Grid -->
+    <div class="content-grid">
+
+      <!-- Left Column: Activity Feed -->
+      <section class="panel activity-panel">
+        <div class="panel-header">
+          <h2 class="panel-title">
+            <span class="title-icon">▶</span>
+            ACTIVITY STREAM
+          </h2>
+          <div class="panel-controls">
+            <button class="control-btn" id="clear-activity">CLEAR</button>
+          </div>
         </div>
-      </div>
 
-      <div class="input-container">
-        <button id="toggle-trading-btn" class="primary-btn" data-running="false">
-          ▶️ Start Auto-Trading
-        </button>
-        <button id="analyze-btn" class="secondary-btn">🔍 Manual Analysis</button>
-      </div>
-    </div>
-
-    <!-- Right Panel: Wallet & Trading Info -->
-    <div class="panel right-panel">
-      <div class="panel-header">
-        <h2>💼 Wallet & Trading</h2>
-      </div>
-
-      <!-- Wallet Balance Section -->
-      <div class="info-section">
-        <h3>Wallet Balance</h3>
-        <div class="balance-display">
-          <div class="balance-amount" id="sol-balance">0.0000</div>
-          <div class="balance-label">SOL</div>
+        <div class="panel-content">
+          <div class="activity-feed" id="chat-container">
+            <div class="system-boot-message">
+              <div class="boot-line">◈ NEXUS TRADING PROTOCOL INITIALIZED</div>
+              <div class="boot-line">◈ QUANTUM MARKET ANALYZER ONLINE</div>
+              <div class="boot-line">◈ AUTONOMOUS EXECUTION MODULE READY</div>
+              <div class="boot-line">◈ MONITORING 10,000+ TRADING PAIRS</div>
+              <div class="boot-line glow">◈ SYSTEM STATUS: OPERATIONAL</div>
+            </div>
+          </div>
         </div>
-        <div class="wallet-address" id="wallet-address">
-          Loading wallet address...
-        </div>
-      </div>
 
-      <!-- Trading Reasoning Section -->
-      <div class="info-section">
-        <h3>🧠 Trading Reasoning</h3>
-        <div class="reasoning-container" id="reasoning-container">
-          <p class="placeholder">No trading decisions yet. Click "Analyze Market" to see the agent's thinking process.</p>
+        <div class="panel-footer">
+          <div class="control-group">
+            <button id="toggle-trading-btn" class="primary-btn" data-running="false">
+              <span class="btn-icon">▶</span>
+              <span class="btn-text">ACTIVATE AUTO-TRADE</span>
+            </button>
+            <button id="analyze-btn" class="secondary-btn">
+              <span class="btn-icon">◆</span>
+              <span class="btn-text">MANUAL SCAN</span>
+            </button>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <!-- Recent Transactions -->
-      <div class="info-section">
-        <h3>📊 Recent Activity</h3>
-        <div class="transactions-container" id="transactions-container">
-          <p class="placeholder">No recent transactions</p>
+      <!-- Center Column: Main Stats -->
+      <section class="panel stats-panel">
+
+        <!-- Wallet Balance -->
+        <div class="stat-card primary-card">
+          <div class="card-header">
+            <span class="card-icon">⬡</span>
+            <span class="card-title">WALLET BALANCE</span>
+          </div>
+          <div class="card-content">
+            <div class="balance-display">
+              <div class="balance-amount" id="sol-balance">0.0000</div>
+              <div class="balance-currency">SOL</div>
+            </div>
+            <div class="balance-usd" id="balance-usd">$0.00 USD</div>
+          </div>
+          <div class="card-footer">
+            <div class="wallet-address" id="wallet-address">
+              <span class="address-label">ADDRESS:</span>
+              <span class="address-value">LOADING...</span>
+            </div>
+          </div>
         </div>
-      </div>
+
+        <!-- Portfolio Stats -->
+        <div class="stat-card">
+          <div class="card-header">
+            <span class="card-icon">◊</span>
+            <span class="card-title">PORTFOLIO METRICS</span>
+          </div>
+          <div class="card-content">
+            <div class="metrics-grid">
+              <div class="metric-item">
+                <div class="metric-label">POSITIONS</div>
+                <div class="metric-value" id="positions-count">0</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-label">24H VOLUME</div>
+                <div class="metric-value" id="volume-24h">0.00</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-label">SUCCESS RATE</div>
+                <div class="metric-value" id="success-rate">0%</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-label">TOTAL TRADES</div>
+                <div class="metric-value" id="total-trades">0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Trading Decision -->
+        <div class="stat-card">
+          <div class="card-header">
+            <span class="card-icon">◈</span>
+            <span class="card-title">LATEST DECISION</span>
+          </div>
+          <div class="card-content">
+            <div class="decision-display" id="reasoning-container">
+              <div class="decision-placeholder">
+                <span class="placeholder-icon">◇</span>
+                <span class="placeholder-text">AWAITING MARKET ANALYSIS</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Right Column: Transactions -->
+      <section class="panel transactions-panel">
+        <div class="panel-header">
+          <h2 class="panel-title">
+            <span class="title-icon">▣</span>
+            TRANSACTION LOG
+          </h2>
+          <div class="panel-controls">
+            <button class="control-btn" id="refresh-txs">REFRESH</button>
+          </div>
+        </div>
+
+        <div class="panel-content">
+          <div class="transactions-list" id="transactions-container">
+            <div class="no-data">
+              <span class="no-data-icon">◻</span>
+              <span class="no-data-text">NO TRANSACTIONS YET</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </div>
   </div>
 
