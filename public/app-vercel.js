@@ -254,9 +254,14 @@ class TradingTerminal {
 
         // Ask user if they want to execute the trade
         if (data.decision.action !== 'hold') {
+          // Format amount properly
+          let amountText = data.decision.amount === 'all'
+            ? 'ALL TOKENS'
+            : (typeof data.decision.amount === 'number' ? `${data.decision.amount.toFixed(4)} SOL` : 'N/A');
+
           const execute = confirm(
             `Execute ${data.decision.action.toUpperCase()} trade for ${data.decision.tokenSymbol}?\n` +
-            `Amount: ${data.decision.amount} SOL\n` +
+            `Amount: ${amountText}\n` +
             `Confidence: ${data.decision.confidence}%\n\n` +
             `Reasoning: ${data.decision.reasoning}`
           );
@@ -386,10 +391,18 @@ class TradingTerminal {
 
     let detailsHtml = '';
     if (decision.tokenSymbol) {
+      // Handle amount being either a number or "all"
+      let amountDisplay = 'N/A';
+      if (decision.amount === 'all') {
+        amountDisplay = 'ALL TOKENS';
+      } else if (typeof decision.amount === 'number') {
+        amountDisplay = decision.amount.toFixed(4) + ' SOL';
+      }
+
       detailsHtml = `
         <div class="trade-details">
           Token: ${decision.tokenSymbol}<br>
-          Amount: ${decision.amount ? decision.amount.toFixed(4) + ' SOL' : 'N/A'}<br>
+          Amount: ${amountDisplay}<br>
           Risk Level: ${decision.riskLevel.toUpperCase()}<br>
           Confidence: ${decision.confidence}%
         </div>
