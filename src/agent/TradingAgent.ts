@@ -67,6 +67,19 @@ export class TradingAgent {
 
   async analyzeMarket(): Promise<TradeDecision> {
     const balance = await this.wallet.getBalance();
+
+    // Check if we have enough balance to trade
+    const usableBalance = Math.max(0, balance - 0.005); // Reserve for fees
+    if (usableBalance < this.config.minTradeAmountSOL) {
+      console.log(`⚠️  Insufficient balance for trading. Need ${this.config.minTradeAmountSOL + 0.005} SOL minimum, have ${balance.toFixed(4)} SOL.`);
+      return {
+        action: 'hold',
+        reasoning: `Insufficient balance for trading. Current: ${balance.toFixed(4)} SOL. Need at least ${(this.config.minTradeAmountSOL + 0.005).toFixed(4)} SOL (${this.config.minTradeAmountSOL} trade + 0.005 fees).`,
+        confidence: 100,
+        riskLevel: 'low',
+      };
+    }
+
     const trendingTokens = await this.pumpFun.getTrendingTokens(10);
 
     // Fetch new pairs from DexScreener (last 6 hours)
@@ -273,7 +286,9 @@ ${tradingWisdom}
 
 Current Portfolio:
 - SOL Balance: ${balance.toFixed(4)} SOL
+- Min Trade Amount: ${this.config.minTradeAmountSOL} SOL (REQUIRED MINIMUM - never go below this!)
 - Max Trade Amount: ${this.config.maxTradeAmountSOL} SOL
+- Usable Balance: ${Math.max(0, balance - 0.005).toFixed(4)} SOL (after reserving 0.005 SOL for fees)
 - Risk Tolerance: ${this.config.riskTolerance}
 
 Trading Performance:
@@ -344,7 +359,10 @@ Analyze these tokens AND new pairs using your trading expertise and decide:
 3. HOLD (only if genuinely no opportunities)
 
 AGGRESSIVE TRADING REQUIREMENTS:
-- POSITION SIZING: Use 15-25% of balance for high conviction trades
+- CRITICAL: MINIMUM TRADE AMOUNT IS ${this.config.minTradeAmountSOL} SOL - NEVER suggest amounts below this!
+- CRITICAL: MAXIMUM TRADE AMOUNT IS ${this.config.maxTradeAmountSOL} SOL - NEVER suggest amounts above this!
+- POSITION SIZING: Use 15-25% of USABLE balance (${Math.max(0, balance - 0.005).toFixed(4)} SOL) for high conviction trades
+- If usable balance < minimum trade amount, output "hold" action
 - TIMING: Enter within 0-120 min of launch for maximum upside
 - NEW PAIRS: Ultra-new pairs (<1 hour) = highest gain potential. Quality Score >30 is acceptable.
 - LIQUIDITY: Minimum $5K USD liquidity is sufficient. Higher is better but not required.
