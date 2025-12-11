@@ -5,6 +5,8 @@ class TradingTerminal {
     this.pollingInterval = null;
     this.elements = {
       chatContainer: document.getElementById('chat-container'),
+      chatInput: document.getElementById('chat-input'),
+      sendChatBtn: document.getElementById('send-chat-btn'),
       toggleTradingBtn: document.getElementById('toggle-trading-btn'),
       analyzeBtn: document.getElementById('analyze-btn'),
       solBalance: document.getElementById('sol-balance'),
@@ -210,8 +212,36 @@ class TradingTerminal {
   }
 
   setupEventListeners() {
+    // Chat functionality
+    this.elements.sendChatBtn.addEventListener('click', () => this.sendChat());
+    this.elements.chatInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') this.sendChat();
+    });
+
+    // Trading controls
     this.elements.toggleTradingBtn.addEventListener('click', () => this.toggleTrading());
     this.elements.analyzeBtn.addEventListener('click', () => this.analyzeMarket());
+  }
+
+  sendChat() {
+    const message = this.elements.chatInput.value.trim();
+    if (!message) return;
+
+    // Clear input
+    this.elements.chatInput.value = '';
+
+    // Add user message to activity feed
+    this.addActivityLog('user', message);
+
+    // Send to server via WebSocket
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({
+        type: 'chat',
+        data: { message }
+      }));
+    } else {
+      this.addActivityLog('error', 'Not connected to server. Please refresh the page.');
+    }
   }
 
   async toggleTrading() {
