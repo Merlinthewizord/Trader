@@ -25,8 +25,8 @@ class TradingTerminal {
     this.updateTradingStatus();
     this.updateTimestamp();
 
-    // Poll wallet balance every 30 seconds as backup
-    this.pollingInterval = setInterval(() => this.updateWalletInfo(), 30000);
+    // Poll wallet balance every 2 minutes to avoid rate limits
+    this.pollingInterval = setInterval(() => this.updateWalletInfo(), 120000);
 
     // Update timestamp every second
     setInterval(() => this.updateTimestamp(), 1000);
@@ -339,9 +339,12 @@ class TradingTerminal {
       if (balanceResponse.ok) {
         this.elements.solBalance.textContent = balanceData.balance.toFixed(4);
         this.elements.walletAddress.innerHTML = `<span class="address-label">ADDRESS:</span> <span class="address-value">${balanceData.address}</span>`;
+      } else if (balanceResponse.status === 429) {
+        console.warn('⚠️ Rate limited - will retry later');
+        return; // Skip transactions if rate limited
       }
 
-      const txResponse = await fetch('/api/wallet/transactions?limit=5');
+      const txResponse = await fetch('/api/wallet/transactions?limit=3');
       const txData = await txResponse.json();
 
       if (txResponse.ok && txData.transactions && txData.transactions.length > 0) {
