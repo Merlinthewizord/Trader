@@ -413,6 +413,64 @@ body {
   }
 }
 
+/* === WELCOME/CHARACTER MESSAGE === */
+.welcome-message {
+  padding: var(--gap-lg);
+  background: linear-gradient(135deg, rgba(0, 255, 65, 0.05) 0%, rgba(0, 212, 170, 0.05) 100%);
+  border: 1px solid var(--border-bright);
+  border-radius: 8px;
+  margin-bottom: var(--gap-md);
+}
+
+.character-intro {
+  text-align: center;
+  margin-bottom: var(--gap-lg);
+  padding-bottom: var(--gap-lg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.character-avatar {
+  font-size: 64px;
+  margin-bottom: var(--gap-sm);
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.character-name {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  color: var(--primary-green);
+  text-shadow: var(--glow-primary);
+  margin-bottom: var(--gap-sm);
+}
+
+.character-tagline {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  color: var(--secondary-green);
+  opacity: 0.8;
+}
+
+.character-message {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.8;
+  color: rgba(0, 255, 65, 0.9);
+  text-align: left;
+}
+
 .message {
   padding: var(--gap-md);
   border-left: 2px solid var(--border-color);
@@ -619,6 +677,77 @@ body {
 .stat-card.primary-card {
   border-color: var(--border-bright);
   box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
+}
+
+/* === TRADER PROFILE CARD === */
+.trader-profile .card-content {
+  padding: var(--gap-xl);
+}
+
+.profile-level {
+  text-align: center;
+  margin-bottom: var(--gap-lg);
+  padding-bottom: var(--gap-lg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.level-badge {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--gold);
+  text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+  margin-bottom: var(--gap-sm);
+  padding: 8px 16px;
+  background: rgba(255, 215, 0, 0.1);
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.level-description {
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgba(0, 255, 65, 0.7);
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--gap-md);
+}
+
+.profile-stat {
+  text-align: center;
+  padding: var(--gap-md);
+  background: rgba(0, 255, 65, 0.03);
+  border-radius: 4px;
+  border: 1px solid rgba(0, 255, 65, 0.1);
+}
+
+.profile-stat .stat-number {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary-green);
+  text-shadow: var(--glow-primary);
+  margin-bottom: 4px;
+}
+
+.profile-stat .stat-number.success {
+  color: var(--gold);
+  text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+}
+
+.profile-stat .stat-text {
+  font-family: var(--font-body);
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: rgba(0, 255, 65, 0.5);
+  text-transform: uppercase;
 }
 
 .card-header {

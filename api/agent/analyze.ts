@@ -24,7 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Initialize components
     const rpcUrl = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
     const privateKey = process.env.SOLANA_PRIVATE_KEY;
-    const deepseekKey = process.env.DEEPSEEK_API_KEY;
+    const anthropicKey = process.env.ANTHROPIC_API_KEY;
     const mem0Key = process.env.MEM0_API_KEY;
     const jupiterApiKey = process.env.JUPITER_API_KEY;
     const birdeyeApiKey = process.env.BIRDEYE_API_KEY;
@@ -33,8 +33,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!privateKey) {
       return res.status(500).json({ error: 'Missing SOLANA_PRIVATE_KEY environment variable' });
     }
-    if (!deepseekKey) {
-      return res.status(500).json({ error: 'Missing DEEPSEEK_API_KEY environment variable' });
+    if (!anthropicKey) {
+      return res.status(500).json({ error: 'Missing ANTHROPIC_API_KEY environment variable' });
     }
     if (!mem0Key) {
       return res.status(500).json({ error: 'Missing MEM0_API_KEY environment variable' });
@@ -63,7 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       riskTolerance: (process.env.RISK_TOLERANCE as any) || 'moderate',
     };
 
-    const agent = new TradingAgent(deepseekKey, wallet, pumpFun, agentConfig, memory, birdeyeApiKey);
+    const agent = new TradingAgent(anthropicKey, wallet, pumpFun, agentConfig, memory, birdeyeApiKey);
     console.log('✅ Trading agent initialized');
     console.log('🤖 Starting market analysis...');
 
