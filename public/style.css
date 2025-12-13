@@ -1,45 +1,52 @@
 /* ==========================================
-   Jidō torihiki ninjarobotto (自動取引忍者ロボット)
-   AUTOMATIC TRADING NINJA ROBOT - SHONEN JUMP STYLE
-   Inspired by anime/manga aesthetics
+   PATRIOT - MAKE TRADING GREAT AGAIN
+   AMERICA FIRST TRADING PROTOCOL
+   🦅🇺🇸 USA! USA! USA! 🇺🇸🦅
    ========================================== */
 
-/* Import Manga-Style Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Bangers&family=Permanent+Marker&family=Chakra+Petch:wght@300;400;500;600;700&family=Passion+One:wght@400;700;900&display=swap');
+/* Import AMERICAN Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neueamily=Staatliches&family=Alfa+Slab+One&family=Bungee&display=swap');
 
 /* ==========================================
-   ROOT VARIABLES - VIBRANT SHONEN PALETTE
+   ROOT VARIABLES - AMERICAN COLORS
+   RED, WHITE, AND BLUE BABY! 🇺🇸
    ========================================== */
 :root {
-  /* Main Colors - Bold and Energetic */
-  --primary-orange: #FF6B35;
-  --primary-red: #DC2F02;
-  --primary-blue: #0077B6;
-  --primary-yellow: #FFD60A;
-  --primary-purple: #7209B7;
+  /* FREEDOM COLORS */
+  --freedom-red: #B22234;
+  --liberty-blue: #3C3B6E;
+  --justice-white: #FFFFFF;
+  --star-white: #F0F0F0;
+  --eagle-gold: #FFD700;
+
+  /* PATRIOTIC ACCENTS */
+  --trump-gold: #D4AF37;
+  --maga-red: #DC143C;
+  --glory-blue: #00205B;
+  --victory-blue: #0052A5;
 
   /* Background Colors */
-  --bg-main: #FFF8F0;
+  --bg-stars: #1C1E3F;
+  --bg-stripes: #2A2D50;
   --bg-panel: #FFFFFF;
-  --bg-dark: #2B2D42;
-  --bg-darker: #1A1B2E;
+  --bg-dark: #1A1D3A;
 
   /* Action Colors */
-  --color-buy: #06D6A0;
-  --color-sell: #EF476F;
-  --color-hold: #FFD60A;
+  --color-buy: #00C853;
+  --color-sell: #FF1744;
+  --color-hold: #FFD700;
 
   /* Text Colors */
-  --text-primary: #1A1B2E;
-  --text-secondary: #555555;
-  --text-accent: #DC2F02;
+  --text-primary: #1A1A1A;
+  --text-freedom: #FFFFFF;
+  --text-accent: #B22234;
 
-  /* Border & Effects */
-  --border-thick: 4px solid #1A1B2E;
-  --border-medium: 3px solid #1A1B2E;
-  --border-thin: 2px solid #1A1B2E;
-  --shadow-manga: 6px 6px 0px rgba(0, 0, 0, 0.8);
-  --shadow-glow: 0 0 20px rgba(255, 107, 53, 0.6);
+  /* FREEDOM Effects */
+  --border-freedom: 4px solid #B22234;
+  --border-liberty: 4px solid #3C3B6E;
+  --border-glory: 4px solid #FFD700;
+  --shadow-freedom: 8px 8px 0px rgba(178, 34, 52, 0.8);
+  --shadow-eagle: 0 0 30px rgba(255, 215, 0, 0.8);
 }
 
 /* ==========================================
@@ -55,14 +62,15 @@ html, body {
   width: 100%;
   height: 100%;
   overflow-x: hidden;
-  font-family: 'Chakra Petch', monospace;
-  background: var(--bg-main);
-  color: var(--text-primary);
+  font-family: 'Anton', sans-serif;
+  background: var(--bg-stars);
+  color: var(--text-freedom);
   position: relative;
 }
 
 /* ==========================================
-   SPEED LINES BACKGROUND (ANIME EFFECT)
+   STARS AND STRIPES BACKGROUND
+   FREEDOM NEVER LOOKED SO GOOD 🇺🇸
    ========================================== */
 .background-grid {
   position: fixed;
@@ -70,44 +78,40 @@ html, body {
   left: 0;
   width: 100%;
   height: 100%;
-  background:
-    linear-gradient(90deg, transparent 0%, transparent 48%, var(--primary-orange) 49%, var(--primary-orange) 51%, transparent 52%, transparent 100%),
-    linear-gradient(0deg, transparent 0%, transparent 48%, var(--primary-yellow) 49%, var(--primary-yellow) 51%, transparent 52%, transparent 100%);
-  background-size: 80px 80px;
-  opacity: 0.05;
-  animation: speedLines 20s linear infinite;
+  background-image:
+    radial-gradient(circle, var(--star-white) 1px, transparent 1px);
+  background-size: 50px 50px;
+  opacity: 0.15;
+  animation: starsSparkle 3s ease-in-out infinite;
   pointer-events: none;
   z-index: 0;
 }
 
-@keyframes speedLines {
-  0% {
-    transform: translateX(0) translateY(0) rotate(0deg);
-  }
-  100% {
-    transform: translateX(80px) translateY(80px) rotate(360deg);
-  }
+@keyframes starsSparkle {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.25; }
 }
 
-/* Scan Line Effect */
+/* FREEDOM SCAN LINE */
 .scan-line {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  height: 3px;
+  height: 5px;
   background: linear-gradient(90deg,
-    transparent 0%,
-    var(--primary-orange) 50%,
-    transparent 100%);
-  animation: scan 3s linear infinite;
+    var(--freedom-red) 0%,
+    var(--justice-white) 33%,
+    var(--liberty-blue) 66%,
+    var(--freedom-red) 100%);
+  animation: freedomScan 4s linear infinite;
   pointer-events: none;
   z-index: 9999;
-  opacity: 0.7;
-  box-shadow: 0 0 20px var(--primary-orange);
+  opacity: 0.8;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
 }
 
-@keyframes scan {
+@keyframes freedomScan {
   0% { top: 0; }
   100% { top: 100%; }
 }
@@ -125,76 +129,96 @@ html, body {
 }
 
 /* ==========================================
-   HEADER - MANGA TITLE STYLE
+   HEADER - AMERICA FIRST!
    ========================================== */
 .main-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 30px;
+  padding: 25px 35px;
   margin-bottom: 30px;
-  background: var(--primary-orange);
-  border: var(--border-thick);
+  background: linear-gradient(135deg, var(--freedom-red), var(--maga-red));
+  border: 5px solid var(--eagle-gold);
   border-radius: 0;
-  box-shadow: var(--shadow-manga);
+  box-shadow:
+    0 0 40px rgba(255, 215, 0, 0.6),
+    inset 0 0 30px rgba(255, 255, 255, 0.1);
   position: relative;
   overflow: hidden;
 }
 
 .main-header::before {
-  content: '';
+  content: '★';
   position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-  animation: shine 3s infinite;
+  font-size: 100px;
+  color: rgba(255, 215, 0, 0.1);
+  top: -20px;
+  left: -10px;
+  animation: starRotate 20s linear infinite;
 }
 
-@keyframes shine {
-  0% { left: -100%; }
-  50% { left: 100%; }
-  100% { left: 100%; }
+.main-header::after {
+  content: '★';
+  position: absolute;
+  font-size: 80px;
+  color: rgba(255, 215, 0, 0.1);
+  bottom: -15px;
+  right: -5px;
+  animation: starRotate 15s linear infinite reverse;
+}
+
+@keyframes starRotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .header-left .logo {
   display: flex;
   flex-direction: column;
   gap: 5px;
+  z-index: 2;
 }
 
 .logo-icon {
-  font-size: 2em;
-  color: var(--bg-darker);
-  filter: drop-shadow(2px 2px 0px rgba(255, 255, 255, 0.5));
+  font-size: 3em;
+  color: var(--eagle-gold);
+  filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8));
+  animation: eagleSoar 3s ease-in-out infinite;
+}
+
+@keyframes eagleSoar {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-8px) scale(1.05); }
 }
 
 .logo-text {
-  font-family: 'Bangers', cursive;
-  font-size: 2.2em;
-  letter-spacing: 2px;
-  color: var(--bg-darker);
+  font-family: 'Bungee', cursive;
+  font-size: 4em;
+  letter-spacing: 8px;
+  color: var(--justice-white);
   text-shadow:
-    3px 3px 0px #FFFFFF,
-    6px 6px 0px var(--primary-red);
-  line-height: 0.8;
-  transform: skew(-5deg);
+    4px 4px 0px var(--liberty-blue),
+    8px 8px 0px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(255, 215, 0, 0.5);
+  line-height: 0.9;
+  transform: skew(-3deg);
 }
 
 .logo-subtitle {
-  font-family: 'Passion One', cursive;
-  font-size: 0.9em;
-  letter-spacing: 3px;
-  color: var(--bg-darker);
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.2em;
+  letter-spacing: 4px;
+  color: var(--eagle-gold);
   font-weight: 700;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
   margin-left: 5px;
 }
 
-/* System Status - Power Level Style */
+/* FREEDOM STATUS INDICATORS */
 .system-status {
   display: flex;
   gap: 30px;
+  z-index: 2;
 }
 
 .status-item {
@@ -206,87 +230,78 @@ html, body {
 
 .status-indicator {
   position: relative;
-  width: 30px;
-  height: 30px;
-  background: var(--bg-dark);
-  border: var(--border-medium);
+  width: 35px;
+  height: 35px;
+  background: var(--glory-blue);
+  border: 3px solid var(--eagle-gold);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
 }
 
 .status-indicator.connected .pulse-dot {
   background: var(--color-buy);
-  animation: energyPulse 1.5s ease-in-out infinite;
+  animation: freedomPulse 1.5s ease-in-out infinite;
 }
 
 .status-indicator.active .pulse-dot {
-  background: var(--primary-yellow);
-  animation: energyPulse 1.5s ease-in-out infinite;
+  background: var(--eagle-gold);
+  animation: freedomPulse 1.5s ease-in-out infinite;
 }
 
 .pulse-dot {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: var(--text-secondary);
+  background: var(--text-accent);
   position: absolute;
+  box-shadow: 0 0 10px currentColor;
 }
 
 .pulse-ring {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  border: 2px solid;
-  border-color: inherit;
-  animation: ringPulse 1.5s ease-out infinite;
+  border: 3px solid var(--eagle-gold);
+  animation: libertyRing 1.5s ease-out infinite;
   position: absolute;
 }
 
-@keyframes energyPulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.3);
-    opacity: 0.7;
-  }
+@keyframes freedomPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.7; }
 }
 
-@keyframes ringPulse {
-  0% {
-    transform: scale(0.8);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1.4);
-    opacity: 0;
-  }
+@keyframes libertyRing {
+  0% { transform: scale(0.7); opacity: 1; }
+  100% { transform: scale(1.5); opacity: 0; }
 }
 
 .status-label {
-  font-family: 'Passion One', cursive;
-  font-size: 1em;
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.1em;
   font-weight: 700;
-  color: var(--bg-darker);
-  letter-spacing: 1px;
+  color: var(--justice-white);
+  letter-spacing: 2px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 
 .timestamp {
-  font-family: 'Chakra Petch', monospace;
-  font-size: 1.1em;
+  font-family: 'Anton', monospace;
+  font-size: 1.2em;
   font-weight: 700;
-  color: var(--bg-darker);
-  background: var(--primary-yellow);
-  padding: 10px 20px;
-  border: var(--border-medium);
+  color: var(--glory-blue);
+  background: var(--justice-white);
+  padding: 12px 24px;
+  border: 4px solid var(--liberty-blue);
   box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.6);
+  z-index: 2;
 }
 
 /* ==========================================
-   CONTENT GRID - MANGA PANELS
+   CONTENT GRID - FREEDOM PANELS
    ========================================== */
 .content-grid {
   display: grid;
@@ -296,39 +311,35 @@ html, body {
 }
 
 /* ==========================================
-   PANELS - MANGA PANEL STYLE
+   PANELS - STARS AND STRIPES STYLE
    ========================================== */
 .panel {
   background: var(--bg-panel);
-  border: var(--border-thick);
-  box-shadow: var(--shadow-manga);
+  border: 5px solid var(--liberty-blue);
+  box-shadow:
+    8px 8px 0px rgba(60, 59, 110, 0.6),
+    0 0 20px rgba(255, 215, 0, 0.3);
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
 }
 
-.panel::after {
-  content: '';
+.panel::before {
+  content: '🦅';
   position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  background: linear-gradient(135deg,
-    var(--primary-orange) 0%,
-    var(--primary-red) 25%,
-    var(--primary-purple) 50%,
-    var(--primary-blue) 75%,
-    var(--primary-yellow) 100%
-  );
-  opacity: 0;
-  z-index: -1;
-  transition: opacity 0.3s ease;
+  top: 10px;
+  right: 10px;
+  font-size: 40px;
+  opacity: 0.05;
+  z-index: 0;
 }
 
-.panel:hover::after {
-  opacity: 0.1;
+.panel:hover {
+  border-color: var(--eagle-gold);
+  box-shadow:
+    10px 10px 0px rgba(212, 175, 55, 0.6),
+    0 0 30px rgba(255, 215, 0, 0.6);
 }
 
 .panel-header {
@@ -336,25 +347,27 @@ html, body {
   justify-content: space-between;
   align-items: center;
   padding: 20px 25px;
-  background: var(--primary-blue);
-  border-bottom: var(--border-medium);
+  background: linear-gradient(135deg, var(--liberty-blue), var(--glory-blue));
+  border-bottom: 4px solid var(--eagle-gold);
+  position: relative;
+  z-index: 1;
 }
 
 .panel-title {
-  font-family: 'Passion One', cursive;
-  font-size: 1.8em;
+  font-family: 'Bebas Neue', cursive;
+  font-size: 2em;
   font-weight: 900;
-  color: #FFFFFF;
-  letter-spacing: 2px;
+  color: var(--justice-white);
+  letter-spacing: 3px;
   display: flex;
   align-items: center;
   gap: 12px;
-  text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.3);
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
 }
 
 .title-icon {
-  font-size: 1.2em;
-  filter: drop-shadow(2px 2px 0px rgba(0, 0, 0, 0.3));
+  font-size: 1.3em;
+  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));
 }
 
 .panel-controls {
@@ -363,29 +376,29 @@ html, body {
 }
 
 .control-btn {
-  font-family: 'Passion One', cursive;
-  font-size: 1em;
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.1em;
   font-weight: 700;
-  padding: 8px 16px;
-  background: var(--primary-yellow);
-  color: var(--bg-darker);
-  border: var(--border-medium);
+  padding: 10px 20px;
+  background: var(--eagle-gold);
+  color: var(--glory-blue);
+  border: 3px solid var(--glory-blue);
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.3);
-  letter-spacing: 1px;
+  box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.4);
+  letter-spacing: 2px;
 }
 
 .control-btn:hover {
-  background: var(--primary-orange);
-  color: #FFFFFF;
+  background: var(--justice-white);
+  color: var(--freedom-red);
   transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.4);
+  box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.5);
 }
 
 .control-btn:active {
   transform: translate(0, 0);
-  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.4);
 }
 
 .panel-content {
@@ -395,16 +408,17 @@ html, body {
   overflow-x: hidden;
   max-height: 600px;
   position: relative;
+  z-index: 1;
 }
 
 .panel-footer {
   padding: 20px;
-  background: var(--bg-main);
-  border-top: var(--border-thin);
+  background: linear-gradient(180deg, transparent, rgba(60, 59, 110, 0.1));
+  border-top: 3px solid var(--liberty-blue);
 }
 
 /* ==========================================
-   ACTIVITY FEED - SPEECH BUBBLES
+   ACTIVITY FEED - PATRIOTIC MESSAGES
    ========================================== */
 .activity-feed {
   display: flex;
@@ -420,139 +434,143 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 25px;
-  background: linear-gradient(135deg, var(--primary-orange), var(--primary-red));
-  border: var(--border-thick);
-  border-radius: 20px;
-  box-shadow: var(--shadow-manga);
+  padding: 30px;
+  background: linear-gradient(135deg, var(--freedom-red), var(--liberty-blue));
+  border: 5px solid var(--eagle-gold);
+  border-radius: 15px;
+  box-shadow:
+    0 0 40px rgba(255, 215, 0, 0.7),
+    inset 0 0 30px rgba(255, 255, 255, 0.1);
   margin-bottom: 20px;
   position: relative;
+  overflow: hidden;
+}
+
+.character-intro::before {
+  content: '★ ★ ★ ★ ★';
+  position: absolute;
+  top: 10px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 1.5em;
+  color: rgba(255, 215, 0, 0.3);
+  letter-spacing: 20px;
 }
 
 .character-avatar {
-  font-size: 5em;
+  font-size: 6em;
   margin-bottom: 15px;
-  animation: bounce 2s ease-in-out infinite;
-  filter: drop-shadow(4px 4px 0px rgba(0, 0, 0, 0.3));
+  animation: eagleFly 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.8));
 }
 
-@keyframes bounce {
-  0%, 100% {
-    transform: translateY(0) scale(1);
-  }
-  50% {
-    transform: translateY(-10px) scale(1.05);
-  }
+@keyframes eagleFly {
+  0%, 100% { transform: translateY(0) scale(1) rotate(-5deg); }
+  50% { transform: translateY(-15px) scale(1.08) rotate(5deg); }
 }
 
 .character-name {
-  font-family: 'Bangers', cursive;
-  font-size: 2em;
-  color: #FFFFFF;
+  font-family: 'Bungee', cursive;
+  font-size: 3em;
+  color: var(--justice-white);
   text-shadow:
-    3px 3px 0px var(--bg-darker),
-    6px 6px 0px rgba(0, 0, 0, 0.3);
-  letter-spacing: 2px;
+    4px 4px 0px var(--glory-blue),
+    8px 8px 0px rgba(0, 0, 0, 0.4),
+    0 0 30px rgba(255, 215, 0, 0.8);
+  letter-spacing: 8px;
+  margin-bottom: 10px;
 }
 
 .character-tagline {
-  font-family: 'Permanent Marker', cursive;
-  font-size: 1.2em;
-  color: var(--primary-yellow);
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.4em;
+  color: var(--eagle-gold);
   margin-top: 5px;
-  text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
+  text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.6);
+  letter-spacing: 2px;
 }
 
 .character-message {
-  background: #FFFFFF;
-  padding: 25px;
-  border: var(--border-thick);
-  border-radius: 20px;
-  box-shadow: var(--shadow-manga);
-  font-size: 1.05em;
-  line-height: 1.7;
+  background: var(--justice-white);
+  padding: 30px;
+  border: 5px solid var(--liberty-blue);
+  border-radius: 15px;
+  box-shadow: 8px 8px 0px rgba(60, 59, 110, 0.4);
+  font-family: 'Anton', sans-serif;
+  font-size: 1.1em;
+  line-height: 1.8;
   position: relative;
   color: var(--text-primary);
+  font-weight: 400;
+  letter-spacing: 0.5px;
 }
 
 .character-message::before {
-  content: '';
+  content: '🇺🇸';
   position: absolute;
-  top: -15px;
+  top: -35px;
   left: 50%;
   transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 15px solid transparent;
-  border-right: 15px solid transparent;
-  border-bottom: 15px solid var(--bg-darker);
-}
-
-.character-message::after {
-  content: '';
-  position: absolute;
-  top: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 12px solid transparent;
-  border-right: 12px solid transparent;
-  border-bottom: 12px solid #FFFFFF;
+  font-size: 3em;
+  filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8));
 }
 
 /* Chat Messages */
 .user-message,
 .agent-message {
-  padding: 18px 22px;
-  border: var(--border-medium);
-  border-radius: 15px;
-  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
+  padding: 20px 25px;
+  border: 4px solid;
+  border-radius: 12px;
+  box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.3);
   max-width: 85%;
   word-wrap: break-word;
   position: relative;
+  font-family: 'Anton', sans-serif;
   font-size: 1.05em;
-  line-height: 1.6;
+  line-height: 1.7;
+  font-weight: 400;
 }
 
 .user-message {
-  background: var(--primary-yellow);
-  color: var(--bg-darker);
+  background: var(--eagle-gold);
+  color: var(--glory-blue);
   align-self: flex-end;
   margin-left: auto;
+  border-color: var(--liberty-blue);
   font-weight: 600;
 }
 
 .user-message::after {
-  content: '▶';
+  content: '★';
   position: absolute;
-  right: -20px;
+  right: -25px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 1.5em;
-  color: var(--primary-yellow);
+  font-size: 2em;
+  color: var(--eagle-gold);
 }
 
 .agent-message {
-  background: #FFFFFF;
+  background: var(--justice-white);
   color: var(--text-primary);
   align-self: flex-start;
-  border-color: var(--primary-blue);
-  border-width: 3px;
+  border-color: var(--freedom-red);
+  border-width: 4px;
 }
 
 .agent-message::before {
-  content: '🤖';
+  content: '🦅';
   position: absolute;
-  left: -35px;
+  left: -40px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 1.8em;
-  filter: drop-shadow(2px 2px 0px rgba(0, 0, 0, 0.2));
+  font-size: 2em;
+  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));
 }
 
 /* ==========================================
-   STAT CARDS - POWER LEVEL DISPLAYS
+   STAT CARDS - FREEDOM STATS
    ========================================== */
 .stats-panel {
   display: flex;
@@ -562,47 +580,50 @@ html, body {
 
 .stat-card {
   background: var(--bg-panel);
-  border: var(--border-thick);
-  box-shadow: var(--shadow-manga);
+  border: 5px solid var(--liberty-blue);
+  box-shadow: 8px 8px 0px rgba(60, 59, 110, 0.4);
   overflow: hidden;
   transition: all 0.3s ease;
 }
 
 .stat-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 8px 8px 0px rgba(0, 0, 0, 0.8);
+  transform: translateY(-4px);
+  box-shadow: 10px 10px 0px rgba(212, 175, 55, 0.6);
+  border-color: var(--eagle-gold);
 }
 
 .stat-card.primary-card {
-  background: linear-gradient(135deg, var(--primary-purple), var(--primary-blue));
+  background: linear-gradient(135deg, var(--freedom-red), var(--liberty-blue));
+  border-color: var(--eagle-gold);
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
 }
 
 .card-header {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 15px 20px;
-  background: var(--bg-darker);
-  border-bottom: var(--border-medium);
+  padding: 18px 22px;
+  background: var(--glory-blue);
+  border-bottom: 4px solid var(--eagle-gold);
 }
 
 .primary-card .card-header {
   background: rgba(0, 0, 0, 0.3);
-  border-bottom-color: rgba(255, 255, 255, 0.3);
+  border-bottom-color: var(--eagle-gold);
 }
 
 .card-icon {
-  font-size: 1.8em;
-  filter: drop-shadow(2px 2px 0px rgba(0, 0, 0, 0.3));
+  font-size: 2em;
+  filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.6));
 }
 
 .card-title {
-  font-family: 'Passion One', cursive;
-  font-size: 1.4em;
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.6em;
   font-weight: 900;
-  color: #FFFFFF;
-  letter-spacing: 2px;
-  text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
+  color: var(--justice-white);
+  letter-spacing: 3px;
+  text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.4);
 }
 
 .card-content {
@@ -610,14 +631,14 @@ html, body {
 }
 
 .card-footer {
-  padding: 15px 20px;
-  background: var(--bg-main);
-  border-top: var(--border-thin);
+  padding: 18px 22px;
+  background: linear-gradient(180deg, transparent, rgba(60, 59, 110, 0.1));
+  border-top: 3px solid var(--liberty-blue);
 }
 
 /* Trader Profile */
 .trader-profile .card-content {
-  color: #FFFFFF;
+  color: var(--justice-white);
 }
 
 .profile-level {
@@ -626,20 +647,21 @@ html, body {
 }
 
 .level-badge {
-  font-family: 'Bangers', cursive;
-  font-size: 2.2em;
-  color: var(--primary-yellow);
+  font-family: 'Bungee', cursive;
+  font-size: 2.5em;
+  color: var(--eagle-gold);
   text-shadow:
-    3px 3px 0px rgba(0, 0, 0, 0.5),
-    5px 5px 0px rgba(0, 0, 0, 0.2);
-  letter-spacing: 2px;
-  margin-bottom: 8px;
+    4px 4px 0px rgba(0, 0, 0, 0.6),
+    0 0 20px rgba(255, 215, 0, 0.8);
+  letter-spacing: 3px;
+  margin-bottom: 10px;
 }
 
 .level-description {
-  font-family: 'Permanent Marker', cursive;
+  font-family: 'Anton', sans-serif;
   font-size: 1.1em;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 400;
 }
 
 .profile-stats {
@@ -650,106 +672,111 @@ html, body {
 
 .profile-stat {
   text-align: center;
-  padding: 15px;
-  background: rgba(0, 0, 0, 0.2);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 3px solid var(--eagle-gold);
   border-radius: 10px;
   flex: 1;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
 }
 
 .stat-number {
-  font-family: 'Bangers', cursive;
-  font-size: 2.5em;
-  color: #FFFFFF;
-  text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.3);
+  font-family: 'Bungee', cursive;
+  font-size: 2.8em;
+  color: var(--justice-white);
+  text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.4);
   margin-bottom: 5px;
 }
 
 .stat-number.success {
   color: var(--color-buy);
+  text-shadow: 0 0 20px rgba(0, 200, 83, 0.8);
 }
 
 .stat-text {
-  font-size: 0.95em;
-  color: rgba(255, 255, 255, 0.8);
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1em;
+  color: rgba(255, 255, 255, 0.9);
   font-weight: 600;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
 }
 
-/* Wallet Balance - Power Level Style */
+/* Wallet Balance - FREEDOM POWER */
 .balance-display {
   display: flex;
   align-items: baseline;
   justify-content: center;
-  gap: 12px;
+  gap: 15px;
   margin-bottom: 15px;
 }
 
 .balance-amount {
-  font-family: 'Bangers', cursive;
-  font-size: 3.5em;
-  color: var(--primary-orange);
+  font-family: 'Bungee', cursive;
+  font-size: 4em;
+  color: var(--freedom-red);
   text-shadow:
-    3px 3px 0px var(--bg-darker),
-    6px 6px 0px rgba(0, 0, 0, 0.2);
-  letter-spacing: 2px;
-  animation: powerGlow 2s ease-in-out infinite;
+    4px 4px 0px var(--liberty-blue),
+    8px 8px 0px rgba(0, 0, 0, 0.3),
+    0 0 30px rgba(178, 34, 52, 0.6);
+  letter-spacing: 3px;
+  animation: freedomGlow 2s ease-in-out infinite;
 }
 
-@keyframes powerGlow {
+@keyframes freedomGlow {
   0%, 100% {
-    filter: drop-shadow(0 0 5px var(--primary-orange));
+    filter: drop-shadow(0 0 10px var(--freedom-red));
   }
   50% {
-    filter: drop-shadow(0 0 20px var(--primary-orange));
+    filter: drop-shadow(0 0 30px var(--freedom-red));
   }
 }
 
 .balance-currency {
-  font-family: 'Passion One', cursive;
-  font-size: 1.8em;
-  color: var(--text-secondary);
+  font-family: 'Bebas Neue', cursive;
+  font-size: 2em;
+  color: var(--text-primary);
   font-weight: 700;
 }
 
 .balance-usd {
   text-align: center;
-  font-family: 'Passion One', cursive;
-  font-size: 1.6em;
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.8em;
   color: var(--color-buy);
   font-weight: 700;
-  background: var(--bg-main);
-  padding: 10px 20px;
-  border: var(--border-medium);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(0, 200, 83, 0.2));
+  padding: 12px 25px;
+  border: 4px solid var(--liberty-blue);
   border-radius: 10px;
-  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
 }
 
 .wallet-address {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  font-size: 0.9em;
+  gap: 10px;
+  font-size: 0.95em;
 }
 
 .address-label {
+  font-family: 'Bebas Neue', cursive;
   font-weight: 700;
-  color: var(--text-secondary);
-  letter-spacing: 1px;
+  color: var(--text-primary);
+  letter-spacing: 2px;
 }
 
 .address-value {
-  font-family: 'Chakra Petch', monospace;
+  font-family: 'Anton', monospace;
   font-weight: 600;
   color: var(--text-primary);
   word-break: break-all;
-  background: var(--bg-panel);
-  padding: 8px 12px;
-  border: var(--border-thin);
-  border-radius: 5px;
+  background: rgba(60, 59, 110, 0.1);
+  padding: 10px 15px;
+  border: 3px solid var(--liberty-blue);
+  border-radius: 8px;
 }
 
-/* Trading Thoughts - Speech Bubble */
+/* Trading Thoughts */
 .decision-display {
   min-height: 120px;
 }
@@ -762,158 +789,136 @@ html, body {
   gap: 15px;
   padding: 30px;
   text-align: center;
-  color: var(--text-secondary);
+  color: var(--text-primary);
 }
 
 .placeholder-icon {
-  font-size: 3em;
-  opacity: 0.5;
-  animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
+  font-size: 3.5em;
+  opacity: 0.4;
+  animation: eagleSoar 3s ease-in-out infinite;
 }
 
 .placeholder-text {
-  font-family: 'Permanent Marker', cursive;
-  font-size: 1.1em;
-  opacity: 0.7;
+  font-family: 'Anton', sans-serif;
+  font-size: 1.2em;
+  opacity: 0.6;
+  font-weight: 400;
 }
 
 .decision-content {
-  padding: 20px;
-  background: var(--bg-main);
-  border: var(--border-medium);
-  border-radius: 15px;
+  padding: 25px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(240, 240, 240, 0.95));
+  border: 4px solid var(--liberty-blue);
+  border-radius: 12px;
   position: relative;
 }
 
 .decision-action {
   display: inline-block;
-  font-family: 'Bangers', cursive;
-  font-size: 2.5em;
-  padding: 10px 25px;
-  border: var(--border-thick);
+  font-family: 'Bungee', cursive;
+  font-size: 3em;
+  padding: 15px 35px;
+  border: 5px solid;
   border-radius: 10px;
   margin-bottom: 20px;
-  text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.2);
-  letter-spacing: 2px;
-  box-shadow: var(--shadow-manga);
+  text-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
+  letter-spacing: 4px;
+  box-shadow: 8px 8px 0px rgba(0, 0, 0, 0.4);
 }
 
 .decision-action.BUY {
   background: var(--color-buy);
-  color: #FFFFFF;
-  animation: impactBuy 0.5s ease-out;
+  border-color: var(--glory-blue);
+  color: var(--justice-white);
+  animation: impactBuy 0.6s ease-out;
 }
 
 .decision-action.SELL {
   background: var(--color-sell);
-  color: #FFFFFF;
-  animation: impactSell 0.5s ease-out;
+  border-color: var(--glory-blue);
+  color: var(--justice-white);
+  animation: impactSell 0.6s ease-out;
 }
 
 .decision-action.HOLD {
-  background: var(--color-hold);
-  color: var(--bg-darker);
-  animation: impactHold 0.5s ease-out;
+  background: var(--eagle-gold);
+  border-color: var(--freedom-red);
+  color: var(--glory-blue);
+  animation: impactHold 0.6s ease-out;
 }
 
 @keyframes impactBuy {
-  0% {
-    transform: scale(0.5) rotate(-10deg);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.1) rotate(5deg);
-  }
-  100% {
-    transform: scale(1) rotate(0deg);
-    opacity: 1;
-  }
+  0% { transform: scale(0.4) rotate(-15deg); opacity: 0; }
+  60% { transform: scale(1.15) rotate(8deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 
 @keyframes impactSell {
-  0% {
-    transform: scale(0.5) rotate(10deg);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.1) rotate(-5deg);
-  }
-  100% {
-    transform: scale(1) rotate(0deg);
-    opacity: 1;
-  }
+  0% { transform: scale(0.4) rotate(15deg); opacity: 0; }
+  60% { transform: scale(1.15) rotate(-8deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 
 @keyframes impactHold {
-  0% {
-    transform: scale(0.5);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
+  0% { transform: scale(0.4); opacity: 0; }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 .decision-token {
-  font-size: 1.3em;
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.5em;
   font-weight: 700;
-  color: var(--primary-blue);
+  color: var(--liberty-blue);
   margin-bottom: 15px;
+  letter-spacing: 2px;
 }
 
 .decision-reasoning {
+  font-family: 'Anton', sans-serif;
   font-size: 1.05em;
-  line-height: 1.7;
+  line-height: 1.8;
   color: var(--text-primary);
   margin-bottom: 15px;
-  padding: 15px;
-  background: #FFFFFF;
-  border: var(--border-thin);
+  padding: 18px;
+  background: var(--justice-white);
+  border: 3px solid var(--liberty-blue);
   border-radius: 10px;
+  font-weight: 400;
 }
 
 .decision-confidence {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-top: 15px;
-  padding: 12px 18px;
-  background: var(--bg-darker);
-  color: #FFFFFF;
+  gap: 15px;
+  margin-top: 18px;
+  padding: 15px 22px;
+  background: var(--glory-blue);
+  color: var(--justice-white);
   border-radius: 10px;
-  border: var(--border-medium);
+  border: 3px solid var(--eagle-gold);
+  font-family: 'Bebas Neue', cursive;
   font-weight: 700;
+  letter-spacing: 2px;
 }
 
 .confidence-bar {
   flex: 1;
-  height: 16px;
+  height: 20px;
   background: rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid var(--eagle-gold);
 }
 
 .confidence-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--primary-orange), var(--primary-red));
-  border-radius: 6px;
+  background: linear-gradient(90deg, var(--freedom-red), var(--eagle-gold));
+  border-radius: 8px;
   transition: width 0.5s ease;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
 }
 
 .confidence-fill::after {
@@ -923,17 +928,17 @@ html, body {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
-  animation: confidenceShine 2s infinite;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  animation: freedomShine 2s infinite;
 }
 
-@keyframes confidenceShine {
+@keyframes freedomShine {
   0% { left: -100%; }
   100% { left: 100%; }
 }
 
 /* ==========================================
-   TRANSACTIONS - ACTION LOG STYLE
+   TRANSACTIONS - FREEDOM LOG
    ========================================== */
 .transactions-list {
   display: flex;
@@ -942,20 +947,21 @@ html, body {
 }
 
 .transaction-item {
-  padding: 18px;
-  background: var(--bg-main);
-  border: var(--border-medium);
-  border-left-width: 6px;
-  border-radius: 8px;
-  box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.2);
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(240, 240, 240, 0.95));
+  border: 4px solid var(--liberty-blue);
+  border-left-width: 8px;
+  border-radius: 10px;
+  box-shadow: 4px 4px 0px rgba(60, 59, 110, 0.3);
   transition: all 0.2s ease;
   cursor: pointer;
 }
 
 .transaction-item:hover {
-  transform: translateX(5px);
-  box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.3);
-  background: #FFFFFF;
+  transform: translateX(6px);
+  box-shadow: 6px 6px 0px rgba(212, 175, 55, 0.4);
+  background: var(--justice-white);
+  border-color: var(--eagle-gold);
 }
 
 .transaction-item.success {
@@ -974,30 +980,34 @@ html, body {
 }
 
 .transaction-type {
-  font-family: 'Passion One', cursive;
-  font-size: 1.3em;
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.5em;
   font-weight: 700;
   color: var(--text-primary);
-  letter-spacing: 1px;
+  letter-spacing: 2px;
 }
 
 .transaction-status {
+  font-family: 'Bebas Neue', cursive;
   font-weight: 700;
-  font-size: 1.1em;
+  font-size: 1.2em;
+  letter-spacing: 1px;
 }
 
 .transaction-details {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  font-family: 'Anton', sans-serif;
   font-size: 0.95em;
-  color: var(--text-secondary);
+  color: var(--text-primary);
+  font-weight: 400;
 }
 
 .transaction-signature {
-  font-family: 'Chakra Petch', monospace;
+  font-family: 'Anton', monospace;
   font-size: 0.85em;
-  color: var(--primary-blue);
+  color: var(--liberty-blue);
   word-break: break-all;
   font-weight: 600;
 }
@@ -1010,7 +1020,7 @@ html, body {
   gap: 15px;
   padding: 50px 20px;
   text-align: center;
-  color: var(--text-secondary);
+  color: var(--text-primary);
 }
 
 .no-data-icon {
@@ -1019,14 +1029,14 @@ html, body {
 }
 
 .no-data-text {
-  font-family: 'Passion One', cursive;
-  font-size: 1.4em;
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.6em;
   opacity: 0.5;
-  letter-spacing: 2px;
+  letter-spacing: 3px;
 }
 
 /* ==========================================
-   CHAT INPUT - MANGA STYLE
+   CHAT INPUT - FREEDOM STYLE
    ========================================== */
 .chat-input-container {
   display: flex;
@@ -1035,12 +1045,12 @@ html, body {
 
 .chat-input {
   flex: 1;
-  padding: 15px 20px;
-  font-family: 'Chakra Petch', monospace;
+  padding: 16px 22px;
+  font-family: 'Anton', monospace;
   font-size: 1.05em;
-  background: #FFFFFF;
+  background: var(--justice-white);
   color: var(--text-primary);
-  border: var(--border-medium);
+  border: 4px solid var(--liberty-blue);
   border-radius: 10px;
   outline: none;
   transition: all 0.3s ease;
@@ -1048,63 +1058,63 @@ html, body {
 }
 
 .chat-input:focus {
-  border-color: var(--primary-orange);
-  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2);
+  border-color: var(--eagle-gold);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
   transform: translateY(-2px);
 }
 
 .chat-input::placeholder {
-  color: var(--text-secondary);
-  opacity: 0.6;
+  color: rgba(0, 0, 0, 0.4);
+  opacity: 0.7;
 }
 
 .chat-send-btn {
-  font-family: 'Bangers', cursive;
+  font-family: 'Bungee', cursive;
   font-size: 1.4em;
-  padding: 12px 30px;
-  background: var(--primary-orange);
-  color: #FFFFFF;
-  border: var(--border-thick);
+  padding: 14px 35px;
+  background: linear-gradient(135deg, var(--freedom-red), var(--maga-red));
+  color: var(--justice-white);
+  border: 4px solid var(--eagle-gold);
   border-radius: 10px;
   cursor: pointer;
-  letter-spacing: 2px;
-  box-shadow: var(--shadow-manga);
+  letter-spacing: 3px;
+  box-shadow: 6px 6px 0px rgba(0, 0, 0, 0.4);
   transition: all 0.2s ease;
-  text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
+  text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.4);
 }
 
 .chat-send-btn:hover {
-  background: var(--primary-red);
+  background: linear-gradient(135deg, var(--maga-red), var(--freedom-red));
   transform: translate(-2px, -2px);
-  box-shadow: 8px 8px 0px rgba(0, 0, 0, 0.8);
+  box-shadow: 8px 8px 0px rgba(0, 0, 0, 0.5);
 }
 
 .chat-send-btn:active {
   transform: translate(0, 0);
-  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.6);
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.4);
 }
 
 /* ==========================================
-   SCROLLBAR - MANGA STYLE
+   SCROLLBAR - FREEDOM STYLE
    ========================================== */
 ::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-main);
-  border: var(--border-thin);
+  background: linear-gradient(180deg, var(--liberty-blue), var(--glory-blue));
+  border: 2px solid var(--eagle-gold);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--primary-orange);
-  border: 2px solid var(--bg-darker);
+  background: linear-gradient(180deg, var(--freedom-red), var(--maga-red));
+  border: 2px solid var(--eagle-gold);
   border-radius: 0;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--primary-red);
+  background: var(--eagle-gold);
 }
 
 /* ==========================================
@@ -1132,7 +1142,7 @@ html, body {
   }
 
   .logo-text {
-    font-size: 2.5em;
+    font-size: 3em;
   }
 
   .system-status {
@@ -1150,15 +1160,15 @@ html, body {
   }
 
   .logo-text {
-    font-size: 2em;
+    font-size: 2.5em;
   }
 
   .panel-title {
-    font-size: 1.4em;
+    font-size: 1.5em;
   }
 
   .balance-amount {
-    font-size: 2.5em;
+    font-size: 3em;
   }
 
   .user-message,
@@ -1167,11 +1177,11 @@ html, body {
   }
 
   .character-avatar {
-    font-size: 3.5em;
+    font-size: 4em;
   }
 
   .character-name {
-    font-size: 2em;
+    font-size: 2.5em;
   }
 }
 
@@ -1202,20 +1212,20 @@ html, body {
   background-color: var(--color-hold) !important;
 }
 
-/* Impact Text Effect */
+/* FREEDOM Impact Text */
 .impact-text {
-  font-family: 'Bangers', cursive;
-  font-size: 1.5em;
-  color: var(--primary-red);
-  text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.3);
-  letter-spacing: 2px;
-  animation: shake 0.5s ease;
+  font-family: 'Bungee', cursive;
+  font-size: 1.8em;
+  color: var(--freedom-red);
+  text-shadow: 4px 4px 0px rgba(0, 0, 0, 0.4);
+  letter-spacing: 3px;
+  animation: freedomShake 0.5s ease;
 }
 
-@keyframes shake {
+@keyframes freedomShake {
   0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px) rotate(-2deg); }
-  75% { transform: translateX(5px) rotate(2deg); }
+  25% { transform: translateX(-6px) rotate(-3deg); }
+  75% { transform: translateX(6px) rotate(3deg); }
 }
 
 /* Loading Animation */
@@ -1228,3 +1238,5 @@ html, body {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+/* USA! USA! USA! */
