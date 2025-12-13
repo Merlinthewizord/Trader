@@ -5,6 +5,7 @@ import { TradingAgent, AgentConfig } from './agent/TradingAgent';
 import { MemoryService } from './memory/MemoryService';
 import { WebServer } from './server/WebServer';
 import { TradingScheduler, TradingSchedulerConfig } from './scheduler/TradingScheduler';
+import { LimitOrderManager, LimitOrderConfig } from './trading/LimitOrderManager';
 
 dotenv.config();
 
@@ -50,6 +51,17 @@ async function main() {
   const memory = new MemoryService(mem0Key);
   console.log(`🧠 Memory service initialized\n`);
 
+  // Initialize limit order manager
+  const limitOrderConfig: LimitOrderConfig = {
+    takeProfitPercent: parseFloat(process.env.TAKE_PROFIT_PERCENT || '30'), // +30%
+    stopLossPercent: parseFloat(process.env.STOP_LOSS_PERCENT || '-40'), // -40%
+  };
+
+  const slippage = parseInt(process.env.SLIPPAGE_BPS || '1000');
+  const limitOrderManager = new LimitOrderManager(pumpFun, wallet, limitOrderConfig, slippage);
+  await limitOrderManager.initialize();
+  console.log(`🎯 Limit Order Manager initialized (TP: +${limitOrderConfig.takeProfitPercent}%, SL: ${limitOrderConfig.stopLossPercent}%)\n`);
+
   // Initialize trading agent
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   if (!anthropicKey) {
@@ -68,7 +80,7 @@ async function main() {
   const bitQueryV1Key = process.env.BITQUERY_API_KEY_V1;
   const bitQueryV2Key = process.env.BITQUERY_API_KEY_V2;
 
-  const agent = new TradingAgent(anthropicKey, wallet, pumpFun, agentConfig, memory, bitQueryV1Key, bitQueryV2Key);
+  const agent = new TradingAgent(anthropicKey, wallet, pumpFun, agentConfig, memory, limitOrderManager, bitQueryV1Key, bitQueryV2Key);
   console.log(`🤖 Trading Agent initialized with ${agentConfig.riskTolerance} risk tolerance (using Anthropic Claude)\n`);
 
   // Initialize autonomous trading scheduler
@@ -96,10 +108,14 @@ async function main() {
     console.log('⏸️  Autonomous trading is DISABLED (set AUTONOMOUS_TRADING_ENABLED=true to enable)\n');
   }
 
+  // Start limit order monitoring
+  limitOrderManager.startMonitoring(30000); // Check every 30 seconds
+
   // Graceful shutdown
   process.on('SIGINT', async () => {
     console.log('\n👋 Shutting down gracefully...');
     scheduler.stop();
+    limitOrderManager.stopMonitoring();
     await webServer.stop();
     process.exit(0);
   });
