@@ -114,6 +114,10 @@ class TradingTerminal {
         this.handleWalletUpdate(message.data);
         break;
 
+      case 'persistent_data':
+        this.handlePersistentData(message.data);
+        break;
+
       case 'autonomous_event':
         this.handleAutonomousEvent(message.data);
         break;
@@ -142,6 +146,67 @@ class TradingTerminal {
     }
     if (data.address) {
       this.elements.walletAddress.innerHTML = `<span class="address-label">ADDRESS:</span> <span class="address-value">${data.address}</span>`;
+    }
+    if (data.balanceUSD !== undefined) {
+      const balanceUsdEl = document.getElementById('balance-usd');
+      if (balanceUsdEl) {
+        balanceUsdEl.textContent = `$${data.balanceUSD.toFixed(2)} USD`;
+      }
+    }
+  }
+
+  handlePersistentData(data) {
+    console.log('📂 Loading persistent data:', data);
+
+    // Load persistent decisions
+    if (data.decisions && data.decisions.length > 0) {
+      console.log(`Loading ${data.decisions.length} persistent decisions`);
+      data.decisions.forEach(storedDecision => {
+        const decision = {
+          ...storedDecision.decision,
+          executed: storedDecision.executed,
+          signature: storedDecision.signature
+        };
+        this.displayTradeDecision(decision, true);
+      });
+    }
+
+    // Load persistent transactions
+    if (data.transactions && data.transactions.length > 0) {
+      console.log(`Loading ${data.transactions.length} persistent transactions`);
+
+      const placeholder = this.elements.transactionsContainer.querySelector('.placeholder, .no-data');
+      if (placeholder) placeholder.remove();
+
+      this.elements.transactionsContainer.innerHTML = data.transactions
+        .map((tx) => {
+          // Get action emoji
+          const typeText = tx.type || 'Unknown';
+          let actionEmoji = '❓';
+          if (typeText.includes('Buy')) actionEmoji = '🟢';
+          else if (typeText.includes('Sell')) actionEmoji = '🔴';
+          else if (typeText.includes('Received')) actionEmoji = '📥';
+          else if (typeText.includes('Sent')) actionEmoji = '📤';
+          else if (typeText.includes('Swap')) actionEmoji = '💱';
+
+          return `
+            <div class="transaction-item">
+              <div style="font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                ${actionEmoji} ${typeText}
+              </div>
+              <div style="font-size: 0.85em; opacity: 0.7; margin-top: 4px;">
+                ${tx.timestamp}
+              </div>
+              <div style="font-size: 0.85em; margin-top: 4px;">
+                Fee: ${tx.fee} • ${tx.status}
+              </div>
+              <div style="font-size: 0.8em; opacity: 0.5; margin-top: 4px; font-family: monospace;">
+                ${tx.signature.substring(0, 16)}...
+              </div>
+            </div>
+          `;
+        })
+        .join('');
     }
   }
 
@@ -339,6 +404,14 @@ class TradingTerminal {
       if (balanceResponse.ok) {
         this.elements.solBalance.textContent = balanceData.balance.toFixed(4);
         this.elements.walletAddress.innerHTML = `<span class="address-label">ADDRESS:</span> <span class="address-value">${balanceData.address}</span>`;
+
+        // Update USD balance
+        if (balanceData.balanceUSD !== undefined) {
+          const balanceUsdEl = document.getElementById('balance-usd');
+          if (balanceUsdEl) {
+            balanceUsdEl.textContent = `$${balanceData.balanceUSD.toFixed(2)} USD`;
+          }
+        }
       } else if (balanceResponse.status === 429) {
         console.warn('⚠️ Rate limited - will retry later');
         return; // Skip transactions if rate limited

@@ -5,6 +5,7 @@ import { TradingAgent } from '../agent/TradingAgent';
 import { SolanaWallet } from '../wallet/SolanaWallet';
 import { PumpFunClient } from '../trading/PumpFunClient';
 import { TradingScheduler } from '../scheduler/TradingScheduler';
+import { PersistentStorage, StoredTransaction } from '../storage/PersistentStorage';
 
 export interface ClientMessage {
   type: 'chat' | 'analyze' | 'execute_trade';
@@ -12,7 +13,7 @@ export interface ClientMessage {
 }
 
 export interface ServerMessage {
-  type: 'chat_response' | 'trade_decision' | 'wallet_update' | 'error' | 'thinking' | 'autonomous_event';
+  type: 'chat_response' | 'trade_decision' | 'wallet_update' | 'error' | 'thinking' | 'autonomous_event' | 'persistent_data';
   data: any;
 }
 
@@ -25,6 +26,9 @@ export class WebServer {
   private pumpFun: PumpFunClient;
   private scheduler: TradingScheduler;
   private clients: Set<WebSocket> = new Set();
+  private storage: PersistentStorage;
+  private cachedSolPrice: number = 200;
+  private lastPriceFetch: number = 0;
 
   constructor(agent: TradingAgent, wallet: SolanaWallet, pumpFun: PumpFunClient, scheduler: TradingScheduler) {
     this.app = express();
@@ -32,6 +36,7 @@ export class WebServer {
     this.wallet = wallet;
     this.pumpFun = pumpFun;
     this.scheduler = scheduler;
+    this.storage = new PersistentStorage();
 
     this.setupMiddleware();
     this.setupRoutes();
@@ -52,7 +57,9 @@ export class WebServer {
       try {
         const balance = await this.wallet.getBalance();
         const address = this.wallet.getAddress();
-        res.json({ balance, address });
+        const solPrice = await this.getSolPrice();
+        const balanceUSD = balance * solPrice;
+        res.json({ balance, address, solPrice, balanceUSD });
       } catch (error: any) {
         res.status(500).json({ error: error.message });
       }
@@ -89,13 +96,26 @@ export class WebServer {
             status: tx.err ? '❌ Failed' : '✅ Success',
             fee: tx.meta?.fee ? (tx.meta.fee / 1e9).toFixed(6) + ' SOL' : 'N/A',
             type: this.detectTransactionType(tx),
+            blockTime: tx.blockTime,
           };
         });
+
+        // Save transactions to persistent storage
+        await this.storage.updateTransactions(enhancedTxs);
 
         console.log(`✅ Retrieved ${enhancedTxs.length} transactions from Helius`);
         res.json({ transactions: enhancedTxs });
       } catch (error: any) {
         console.error('❌ Error fetching transactions:', error);
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    this.app.get('/api/persistent/data', async (req: Request, res: Response) => {
+      try {
+        const data = this.storage.getAllData();
+        res.json(data);
+      } catch (error: any) {
         res.status(500).json({ error: error.message });
       }
     });
@@ -125,6 +145,10 @@ export class WebServer {
         console.log('🔍 Analyze endpoint called');
         const decision = await this.agent.analyzeMarket();
         console.log('✅ Market analysis complete');
+
+        // Save decision to persistent storage
+        await this.storage.addDecision(decision, false);
+
         res.json({ decision });
       } catch (error: any) {
         console.error('❌ Error in analyze endpoint:', error);
@@ -138,6 +162,10 @@ export class WebServer {
         const { decision } = req.body;
         const signature = await this.agent.executeTrade(decision);
         console.log('✅ Trade executed:', signature);
+
+        // Save executed trade to persistent storage
+        await this.storage.addDecision(decision, true, signature || undefined);
+
         res.json({ signature, executed: true });
       } catch (error: any) {
         console.error('❌ Error in execute endpoint:', error);
@@ -187,7 +215,14 @@ export class WebServer {
 
   private setupSchedulerEvents() {
     // Listen for scheduler events and broadcast to all connected clients
-    this.scheduler.onEvent((event) => {
+    this.scheduler.onEvent(async (event) => {
+      // Save decisions to persistent storage
+      if (event.type === 'decision' && event.data) {
+        await this.storage.addDecision(event.data, false);
+      } else if (event.type === 'trade' && event.data) {
+        await this.storage.addDecision(event.data, true, event.data.signature);
+      }
+
       this.broadcast({
         type: 'autonomous_event',
         data: event,
@@ -223,6 +258,12 @@ export class WebServer {
 
       // Send initial wallet state
       this.sendWalletUpdate(ws);
+
+      // Send persistent data
+      this.sendToClient(ws, {
+        type: 'persistent_data',
+        data: this.storage.getAllData(),
+      });
     });
   }
 
@@ -275,10 +316,12 @@ export class WebServer {
     const balance = await this.wallet.getBalance();
     const address = this.wallet.getAddress();
     const transactions = await this.wallet.getRecentTransactions(2);
+    const solPrice = await this.getSolPrice();
+    const balanceUSD = balance * solPrice;
 
     this.sendToClient(ws, {
       type: 'wallet_update',
-      data: { balance, address, transactions },
+      data: { balance, address, transactions, solPrice, balanceUSD },
     });
   }
 
@@ -371,8 +414,31 @@ export class WebServer {
     });
   }
 
-  start(port: number): Promise<void> {
-    return new Promise((resolve) => {
+  private async getSolPrice(): Promise<number> {
+    // Cache for 1 minute to avoid rate limiting
+    const now = Date.now();
+    if (now - this.lastPriceFetch < 60000 && this.cachedSolPrice > 0) {
+      return this.cachedSolPrice;
+    }
+
+    try {
+      const response = await fetch('https://price.jup.ag/v6/price?ids=SOL');
+      const data: any = await response.json();
+      const price = data.data?.SOL?.price || 200;
+      this.cachedSolPrice = price;
+      this.lastPriceFetch = now;
+      return price;
+    } catch (error) {
+      console.error('Error fetching SOL price:', error);
+      return this.cachedSolPrice; // Return cached price on error
+    }
+  }
+
+  async start(port: number): Promise<void> {
+    return new Promise(async (resolve) => {
+      // Initialize persistent storage
+      await this.storage.initialize();
+
       this.server = this.app.listen(port, () => {
         console.log(`Server running on http://localhost:${port}`);
         this.setupWebSocket();
