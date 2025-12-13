@@ -71,12 +71,26 @@ export class TradingAgent {
   }
 
   async analyzeMarket(): Promise<TradeDecision> {
+    // Get REAL on-chain balances via RPC
     const balance = await this.wallet.getBalance();
 
     // Get current portfolio holdings first
-    console.log('💼 Checking portfolio holdings...');
+    console.log('💼 Checking RPC on-chain portfolio holdings...');
     const holdings = await this.wallet.getTokenHoldings();
     const portfolio = await this.getPortfolioWithPrices(holdings);
+    const portfolioValue = await this.getPortfolioValue(balance, holdings);
+
+    console.log(`\n💰 REAL-TIME PORTFOLIO VALUE:`);
+    console.log(`   Total Value: $${portfolioValue.totalValueUSD.toFixed(2)} USD`);
+    console.log(`   SOL: ${portfolioValue.solBalance.toFixed(4)} SOL ($${portfolioValue.solValueUSD.toFixed(2)} @ $${portfolioValue.solPriceUSD.toFixed(2)})`);
+    if (portfolioValue.tokens.length > 0) {
+      console.log(`   Token Holdings:`);
+      portfolioValue.tokens.forEach(t => {
+        console.log(`     - ${t.symbol}: ${t.balance.toFixed(2)} tokens ($${t.valueUSD.toFixed(2)})`);
+      });
+    } else {
+      console.log(`   Token Holdings: NONE`);
+    }
 
     // Check if we have enough balance to trade
     const usableBalance = Math.max(0, balance - 0.005); // Reserve for fees
@@ -168,7 +182,8 @@ export class TradingAgent {
       tradingStats,
       recentMemories,
       bitQueryAnalytics,
-      portfolio
+      portfolio,
+      portfolioValue
     );
 
     const completion = await this.anthropic.messages.create({
@@ -326,6 +341,60 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
     }
   }
 
+  private async getSolPrice(): Promise<number> {
+    try {
+      // Use Jupiter price API to get SOL/USD price
+      const response = await fetch('https://price.jup.ag/v6/price?ids=SOL');
+      const data: any = await response.json();
+      return data.data?.SOL?.price || 0;
+    } catch (error) {
+      console.error('Error fetching SOL price:', error);
+      // Fallback to approximate price if API fails
+      return 200;
+    }
+  }
+
+  private async getPortfolioValue(solBalance: number, holdings: TokenHolding[]): Promise<{
+    solBalance: number;
+    solPriceUSD: number;
+    solValueUSD: number;
+    tokens: Array<{ mint: string; symbol: string; balance: number; priceUSD: number; valueUSD: number }>;
+    totalValueUSD: number;
+  }> {
+    const solPrice = await this.getSolPrice();
+    const solValueUSD = solBalance * solPrice;
+
+    const tokens: Array<{ mint: string; symbol: string; balance: number; priceUSD: number; valueUSD: number }> = [];
+    let tokensValueUSD = 0;
+
+    for (const holding of holdings) {
+      try {
+        const tokenInfo = await this.pumpFun.getTokenInfo(holding.mint);
+        if (tokenInfo && tokenInfo.usdPrice) {
+          const valueUSD = holding.balance * tokenInfo.usdPrice;
+          tokens.push({
+            mint: holding.mint,
+            symbol: tokenInfo.symbol,
+            balance: holding.balance,
+            priceUSD: tokenInfo.usdPrice,
+            valueUSD: valueUSD,
+          });
+          tokensValueUSD += valueUSD;
+        }
+      } catch (error) {
+        console.error(`Error getting price for ${holding.mint}:`, error);
+      }
+    }
+
+    return {
+      solBalance,
+      solPriceUSD: solPrice,
+      solValueUSD,
+      tokens,
+      totalValueUSD: solValueUSD + tokensValueUSD,
+    };
+  }
+
   private async getPortfolioWithPrices(holdings: TokenHolding[]): Promise<PortfolioPosition[]> {
     const portfolio: PortfolioPosition[] = [];
 
@@ -362,7 +431,14 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
     tradingStats: { totalTrades: number; successfulTrades: number; failedTrades: number; successRate: number },
     memories: string[],
     bitQueryAnalytics?: Map<string, TokenAnalytics>,
-    portfolio?: PortfolioPosition[]
+    portfolio?: PortfolioPosition[],
+    portfolioValue?: {
+      solBalance: number;
+      solPriceUSD: number;
+      solValueUSD: number;
+      tokens: Array<{ mint: string; symbol: string; balance: number; priceUSD: number; valueUSD: number }>;
+      totalValueUSD: number;
+    }
   ): string {
     const memoriesSection = memories.length > 0
       ? `\n\nPast Trading Experiences (learn from these):\n${memories.map((m, i) => `${i + 1}. ${m}`).join('\n\n')}`
@@ -375,24 +451,36 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
 
 ${tradingWisdom}
 
-Current Portfolio:
-- SOL Balance: ${balance.toFixed(4)} SOL
-- Min Trade Amount: ${this.config.minTradeAmountSOL} SOL (REQUIRED MINIMUM - never go below this!)
-- Max Trade Amount: ${this.config.maxTradeAmountSOL} SOL
-- Usable Balance: ${Math.max(0, balance - 0.005).toFixed(4)} SOL (after reserving 0.005 SOL for fees)
-- Risk Tolerance: ${this.config.riskTolerance}
+🏦 REAL-TIME PORTFOLIO (verified via RPC):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💰 TOTAL VALUE: $${portfolioValue?.totalValueUSD.toFixed(2) || '0.00'} USD
 
-${portfolio && portfolio.length > 0 ? `
-TOKEN HOLDINGS - ACTIVELY CONSIDER SELLING THESE:
-${portfolio.map((p, i) => `${i + 1}. ${p.symbol}
-   - Token Mint: ${p.mint}
-   - Balance: ${p.balance.toFixed(2)} tokens
-   - Current Price: $${p.currentPrice.toFixed(6)}
-   - Total Value: $${p.value.toFixed(2)}
-   - DECISION: Should you SELL this for profit, or HOLD for bigger gains?`).join('\n\n')}
+SOL Holdings:
+  • Balance: ${balance.toFixed(4)} SOL = $${portfolioValue?.solValueUSD.toFixed(2) || '0.00'} (@ $${portfolioValue?.solPriceUSD.toFixed(2) || '0'}/SOL)
+  • Usable: ${Math.max(0, balance - 0.005).toFixed(4)} SOL (reserves 0.005 for fees)
+  • Trade Limits: Min ${this.config.minTradeAmountSOL} SOL | Max ${this.config.maxTradeAmountSOL} SOL
 
-⚠️ IMPORTANT: You currently hold ${portfolio.length} token(s). For EACH token above, decide if you should SELL for profit or keep holding.
-` : '📭 No token holdings currently. Focus on finding BUY opportunities.\n'}
+${portfolioValue && portfolioValue.tokens.length > 0 ? `
+🪙 TOKEN HOLDINGS (RPC-VERIFIED - YOU OWN THESE):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${portfolioValue.tokens.map((t, i) => `${i + 1}. ${t.symbol}
+   📍 Mint: ${t.mint}
+   💎 Balance: ${t.balance.toFixed(2)} tokens
+   💵 Price: $${t.priceUSD.toFixed(6)}
+   💰 Total Value: $${t.valueUSD.toFixed(2)}
+   ⚠️ You can SELL this (use amount: "all" or SOL value)`).join('\n\n')}
+
+🚨 CRITICAL: You can ONLY sell the ${portfolioValue.tokens.length} token${portfolioValue.tokens.length > 1 ? 's' : ''} listed above.
+   To sell any other token = IMPOSSIBLE (you don't own it!)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+` : `
+🪙 TOKEN HOLDINGS: NONE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📭 You don't own ANY tokens.
+🚨 You can only BUY (cannot SELL - nothing to sell!)
+   Focus on finding BUY opportunities from trending tokens below.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`}
 
 Trading Performance:
 - Total Trades: ${tradingStats.totalTrades}

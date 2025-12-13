@@ -16,6 +16,20 @@ export interface TokenHolding {
   decimals: number;
 }
 
+export interface PortfolioValue {
+  solBalance: number;
+  solPriceUSD: number;
+  solValueUSD: number;
+  tokens: Array<{
+    mint: string;
+    symbol: string;
+    balance: number;
+    priceUSD: number;
+    valueUSD: number;
+  }>;
+  totalValueUSD: number;
+}
+
 export class SolanaWallet {
   private connection: Connection;
   private keypair: Keypair;
