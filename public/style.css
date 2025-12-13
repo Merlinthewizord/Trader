@@ -63,7 +63,9 @@ html, body {
   height: 100%;
   overflow-x: hidden;
   font-family: 'Anton', sans-serif;
-  background: var(--bg-stars);
+  background:
+    linear-gradient(rgba(28, 30, 63, 0.85), rgba(28, 30, 63, 0.85)),
+    url('https://images.unsplash.com/photo-1484681096355-7cfabe071abd?w=1920&q=80') center/cover fixed;
   color: var(--text-freedom);
   position: relative;
 }
@@ -79,17 +81,17 @@ html, body {
   width: 100%;
   height: 100%;
   background-image:
-    radial-gradient(circle, var(--star-white) 1px, transparent 1px);
-  background-size: 50px 50px;
-  opacity: 0.15;
+    radial-gradient(circle, var(--star-white) 2px, transparent 2px);
+  background-size: 60px 60px;
+  opacity: 0.08;
   animation: starsSparkle 3s ease-in-out infinite;
   pointer-events: none;
   z-index: 0;
 }
 
 @keyframes starsSparkle {
-  0%, 100% { opacity: 0.15; }
-  50% { opacity: 0.25; }
+  0%, 100% { opacity: 0.08; }
+  50% { opacity: 0.15; }
 }
 
 /* FREEDOM SCAN LINE */
