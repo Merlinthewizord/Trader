@@ -8,9 +8,9 @@ The Twitter Spaces Bot enables your trading agent to join Twitter Spaces (audio 
 
 ## Features
 
-- **Voice Conversation**: Natural language interactions using OpenAI GPT-4 for responses
-- **Speech Recognition**: Audio transcription using OpenAI Whisper
-- **Text-to-Speech**: High-quality voice synthesis using ElevenLabs or OpenAI TTS
+- **Voice Conversation**: Natural language interactions using DeepSeek AI for responses
+- **Speech Recognition**: Audio transcription using OpenAI Whisper (if needed)
+- **Text-to-Speech**: High-quality voice synthesis using ElevenLabs or OpenAI TTS (if needed)
 - **Auto-Join Mode**: Automatically discover and join relevant Twitter Spaces
 - **Trading Commentary**: Provide real-time market insights and trading analysis
 - **REST API Control**: Full programmatic control via HTTP endpoints
@@ -19,7 +19,8 @@ The Twitter Spaces Bot enables your trading agent to join Twitter Spaces (audio 
 
 The bot is built using:
 - **twitter-api-v2**: Twitter API v2 client for Node.js
-- **OpenAI API**: GPT-4 for conversation, Whisper for speech-to-text, TTS for voice
+- **DeepSeek API**: For AI-powered conversation and trading insights
+- **OpenAI API**: Whisper for speech-to-text, TTS for voice (if audio features are needed)
 - **ElevenLabs**: Optional premium voice synthesis
 - **TypeScript**: Type-safe implementation
 
@@ -34,8 +35,8 @@ TWITTER_API_SECRET=your_twitter_api_secret_here
 TWITTER_ACCESS_TOKEN=your_twitter_access_token_here
 TWITTER_ACCESS_SECRET=your_twitter_access_secret_here
 
-# OpenAI API (Required for voice bot)
-OPENAI_API_KEY=your_openai_api_key_here
+# DeepSeek API (Required for voice bot)
+DEEPSEEK_API_KEY=your_deepseek_api_key_here
 
 # ElevenLabs API (Optional - for premium voice)
 ELEVENLABS_API_KEY=your_elevenlabs_api_key_here
@@ -301,7 +302,7 @@ TWITTER_API_KEY=...
 TWITTER_API_SECRET=...
 TWITTER_ACCESS_TOKEN=...
 TWITTER_ACCESS_SECRET=...
-OPENAI_API_KEY=...
+DEEPSEEK_API_KEY=...
 ```
 
 ### API Errors
