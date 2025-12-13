@@ -256,6 +256,20 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
     }
 
     try {
+      // CRITICAL: Validate token exists before attempting to trade
+      if (decision.action === 'buy') {
+        console.log(`🔍 Validating token ${decision.tokenSymbol} (${decision.tokenMint}) exists...`);
+        try {
+          const tokenInfo = await this.pumpFun.getTokenInfo(decision.tokenMint);
+          if (!tokenInfo) {
+            throw new Error(`Token ${decision.tokenSymbol} (${decision.tokenMint}) does not exist or is not tradeable!`);
+          }
+          console.log(`✅ Token validated: ${tokenInfo.symbol} - $${tokenInfo.usdPrice?.toFixed(6) || 'N/A'}`);
+        } catch (error: any) {
+          throw new Error(`Cannot trade ${decision.tokenSymbol}: Token validation failed - ${error.message}. This token may not exist or may not be tradeable on pump.fun.`);
+        }
+      }
+
       let tradeAmount: number;
       let sellAllTokens = false;
 
@@ -576,6 +590,24 @@ ${pairAnalysis.map((analysis, i) => {
    - Signals: ${q.signals.length > 0 ? q.signals.join(', ') : 'None'}
    - Warnings: ${q.warnings.length > 0 ? q.warnings.join(', ') : 'None'}${bitQueryInfo}`;
 }).join('\n\n')}
+
+🚨🚨🚨 CRITICAL RULES - BREAKING THESE WILL CAUSE TRADE FAILURES 🚨🚨🚨
+
+1. **ONLY USE TOKENS FROM THE LISTS ABOVE**: You MUST choose a token from either:
+   - The "Top Trending Tokens (Pump.fun)" list above
+   - The "NEW Solana Pairs from DexScreener" list above
+   - Your current "TOKEN HOLDINGS" (for SELL only)
+
+2. **NEVER MAKE UP TOKEN ADDRESSES**: Do NOT create, guess, or hallucinate token mint addresses!
+   - Copy the EXACT "Mint:" or "Token Address:" from the lists above
+   - If you invent a token address, the trade WILL FAIL with error 400/422
+
+3. **VERIFY BEFORE SUGGESTING**:
+   - Double-check the token mint address exists in the data above
+   - Ensure you're copying the complete address correctly
+   - If you can't find a good token in the lists, choose "hold"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Analyze these tokens AND new pairs using your trading expertise and decide:
 1. SELL a token from your portfolio (if you have holdings with good profit or to cut losses)
