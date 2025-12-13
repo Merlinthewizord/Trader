@@ -52,9 +52,9 @@ async function main() {
   console.log(`🧠 Memory service initialized\n`);
 
   // Initialize trading agent
-  const deepseekKey = process.env.DEEPSEEK_API_KEY;
-  if (!deepseekKey) {
-    console.error('❌ DEEPSEEK_API_KEY not found in environment variables');
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  if (!anthropicKey) {
+    console.error('❌ ANTHROPIC_API_KEY not found in environment variables');
     process.exit(1);
   }
 
@@ -76,8 +76,8 @@ async function main() {
   const bitQueryV1Key = process.env.BITQUERY_API_KEY_V1;
   const bitQueryV2Key = process.env.BITQUERY_API_KEY_V2;
 
-  const agent = new TradingAgent(deepseekKey, wallet, pumpFun, agentConfig, memory, birdeyeApiKey, bitQueryV1Key, bitQueryV2Key);
-  console.log(`🤖 Trading Agent initialized with ${agentConfig.riskTolerance} risk tolerance (using DeepSeek deepseek-chat)\n`);
+  const agent = new TradingAgent(anthropicKey, wallet, pumpFun, agentConfig, memory, birdeyeApiKey, bitQueryV1Key, bitQueryV2Key);
+  console.log(`🤖 Trading Agent initialized with ${agentConfig.riskTolerance} risk tolerance (using Anthropic Claude)\n`);
 
   // Initialize autonomous trading scheduler
   const schedulerConfig: TradingSchedulerConfig = {
@@ -94,12 +94,12 @@ async function main() {
   let twitterBot: TwitterSpacesBot | undefined;
   if (process.env.TWITTER_BOT_ENABLED === 'true') {
     const twitterBearerToken = process.env.TWITTER_BEARER_TOKEN;
-    const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
+    const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
 
-    if (twitterBearerToken && deepseekApiKey) {
+    if (twitterBearerToken && anthropicApiKey) {
       const twitterConfig: TwitterSpacesBotConfig = {
         twitterBearerToken,
-        openaiApiKey: deepseekApiKey, // Using DeepSeek API
+        openaiApiKey: anthropicApiKey, // Using Anthropic API
         elevenLabsApiKey: process.env.ELEVENLABS_API_KEY,
         voiceId: process.env.ELEVENLABS_VOICE_ID,
         personality: process.env.TWITTER_BOT_PERSONALITY,
@@ -108,7 +108,7 @@ async function main() {
       };
 
       twitterBot = new TwitterSpacesBot(twitterConfig, agent);
-      console.log('🐦 Twitter Spaces Bot initialized with DeepSeek AI (OAuth 2.0)\n');
+      console.log('🐦 Twitter Spaces Bot initialized with Anthropic Claude (OAuth 2.0)\n');
 
       // Start auto-join mode if enabled
       if (twitterConfig.autoJoinSpaces) {
@@ -117,7 +117,7 @@ async function main() {
         twitterBot.startAutoJoinMode(searchQuery, 5);
       }
     } else {
-      console.log('⚠️  Twitter bot enabled but missing TWITTER_BEARER_TOKEN or DEEPSEEK_API_KEY. Skipping initialization.\n');
+      console.log('⚠️  Twitter bot enabled but missing TWITTER_BEARER_TOKEN or ANTHROPIC_API_KEY. Skipping initialization.\n');
     }
   }
 
