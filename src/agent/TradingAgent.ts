@@ -342,16 +342,49 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
   }
 
   private async getSolPrice(): Promise<number> {
-    try {
-      // Use Jupiter price API to get SOL/USD price
-      const response = await fetch('https://price.jup.ag/v6/price?ids=SOL');
-      const data: any = await response.json();
-      return data.data?.SOL?.price || 0;
-    } catch (error) {
-      console.error('Error fetching SOL price:', error);
-      // Fallback to approximate price if API fails
-      return 200;
+    // Try multiple price sources with fallbacks
+    const priceSources = [
+      // CoinGecko API (most reliable, no auth required)
+      async () => {
+        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd', {
+          headers: { 'Accept': 'application/json' },
+        });
+        const data: any = await response.json();
+        return data?.solana?.usd;
+      },
+      // Binance API (very reliable)
+      async () => {
+        const response = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=SOLUSDT');
+        const data: any = await response.json();
+        return parseFloat(data?.price);
+      },
+      // Jupiter API (original)
+      async () => {
+        const response = await fetch('https://price.jup.ag/v6/price?ids=SOL');
+        const data: any = await response.json();
+        return data?.data?.SOL?.price;
+      },
+    ];
+
+    for (const source of priceSources) {
+      try {
+        const price = await Promise.race([
+          source(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
+        ]) as number;
+
+        if (price && price > 0) {
+          return price;
+        }
+      } catch (error) {
+        // Try next source
+        continue;
+      }
     }
+
+    // All sources failed, return default
+    console.error('⚠️ All SOL price sources failed, using default $200');
+    return 200;
   }
 
   private async getPortfolioValue(solBalance: number, holdings: TokenHolding[]): Promise<{
