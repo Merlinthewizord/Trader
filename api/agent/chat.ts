@@ -31,6 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const anthropicKey = process.env.ANTHROPIC_API_KEY;
     const mem0Key = process.env.MEM0_API_KEY;
     const jupiterApiKey = process.env.JUPITER_API_KEY;
+    const birdeyeApiKey = process.env.BIRDEYE_API_KEY;
 
     if (!privateKey) {
       return res.status(500).json({ error: 'Missing SOLANA_PRIVATE_KEY environment variable' });
@@ -40,6 +41,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     if (!mem0Key) {
       return res.status(500).json({ error: 'Missing MEM0_API_KEY environment variable' });
+    }
+    if (!birdeyeApiKey) {
+      return res.status(500).json({ error: 'Missing BIRDEYE_API_KEY environment variable' });
     }
 
     const wallet = new SolanaWallet(rpcUrl, privateKey);
@@ -55,7 +59,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       riskTolerance: (process.env.RISK_TOLERANCE as any) || 'moderate',
     };
 
-    const agent = new TradingAgent(anthropicKey, wallet, pumpFun, agentConfig, memory);
+    const agent = new TradingAgent(anthropicKey, wallet, pumpFun, agentConfig, memory, birdeyeApiKey);
     const response = await agent.chat(message);
 
     return res.status(200).json({ response });

@@ -22,8 +22,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const anthropicKey = process.env.ANTHROPIC_API_KEY;
     const mem0Key = process.env.MEM0_API_KEY;
     const jupiterApiKey = process.env.JUPITER_API_KEY;
+    const birdeyeApiKey = process.env.BIRDEYE_API_KEY;
 
-    if (!privateKey || !anthropicKey || !mem0Key) {
+    if (!privateKey || !anthropicKey || !mem0Key || !birdeyeApiKey) {
       return res.status(500).json({ error: 'Missing required API keys' });
     }
 
@@ -40,7 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       riskTolerance: (process.env.RISK_TOLERANCE as any) || 'moderate',
     };
 
-    const agent = new TradingAgent(anthropicKey, wallet, pumpFun, agentConfig, memory);
+    const agent = new TradingAgent(anthropicKey, wallet, pumpFun, agentConfig, memory, birdeyeApiKey);
     const signature = await agent.executeTrade(decision);
 
     res.status(200).json({ signature, decision });
