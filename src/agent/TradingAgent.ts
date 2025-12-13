@@ -180,7 +180,7 @@ export class TradingAgent {
       model: 'deepseek-chat',
       max_tokens: 1024,
       messages: [
-        { role: 'system', content: 'You are an expert Solana trading agent analyzing market conditions to make informed trading decisions.' },
+       { role: 'system', content: this.getLearningSystemPrompt(tradingStats) },
         { role: 'user', content: prompt }
       ],
     });
