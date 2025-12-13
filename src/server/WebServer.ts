@@ -421,17 +421,52 @@ export class WebServer {
       return this.cachedSolPrice;
     }
 
-    try {
-      const response = await fetch('https://price.jup.ag/v6/price?ids=SOL');
-      const data: any = await response.json();
-      const price = data.data?.SOL?.price || 200;
-      this.cachedSolPrice = price;
-      this.lastPriceFetch = now;
-      return price;
-    } catch (error) {
-      console.error('Error fetching SOL price:', error);
-      return this.cachedSolPrice; // Return cached price on error
+    // Try multiple price sources with fallbacks
+    const priceSources = [
+      // CoinGecko API (most reliable, no auth required)
+      async () => {
+        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd', {
+          headers: { 'Accept': 'application/json' },
+        });
+        const data: any = await response.json();
+        return data?.solana?.usd;
+      },
+      // Binance API (very reliable)
+      async () => {
+        const response = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=SOLUSDT');
+        const data: any = await response.json();
+        return parseFloat(data?.price);
+      },
+      // Jupiter API (original)
+      async () => {
+        const response = await fetch('https://price.jup.ag/v6/price?ids=SOL');
+        const data: any = await response.json();
+        return data?.data?.SOL?.price;
+      },
+    ];
+
+    for (const source of priceSources) {
+      try {
+        const price = await Promise.race([
+          source(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
+        ]) as number;
+
+        if (price && price > 0) {
+          this.cachedSolPrice = price;
+          this.lastPriceFetch = now;
+          console.log(`✅ SOL price fetched: $${price.toFixed(2)}`);
+          return price;
+        }
+      } catch (error) {
+        // Try next source
+        continue;
+      }
     }
+
+    // All sources failed, return cached price or default
+    console.warn('⚠️ All price sources failed, using cached/default price');
+    return this.cachedSolPrice > 0 ? this.cachedSolPrice : 200;
   }
 
   async start(port: number): Promise<void> {
