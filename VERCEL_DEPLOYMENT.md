@@ -41,9 +41,10 @@ The project has been restructured to work with Vercel's serverless architecture:
    ```
    SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
    SOLANA_PRIVATE_KEY=your_wallet_private_key
-   ANTHROPIC_API_KEY=your_anthropic_api_key
+   DEEPSEEK_API_KEY=your_deepseek_api_key
    MEM0_API_KEY=your_mem0_api_key
    JUPITER_API_KEY=your_jupiter_api_key
+   BIRDEYE_API_KEY=your_birdeye_api_key
    PRIORITY_FEE=0.00001
    POOL=auto
    MAX_TRADE_AMOUNT_SOL=0.1
@@ -68,9 +69,10 @@ The project has been restructured to work with Vercel's serverless architecture:
    ```bash
    vercel env add SOLANA_RPC_URL production
    vercel env add SOLANA_PRIVATE_KEY production
-   vercel env add ANTHROPIC_API_KEY production
+   vercel env add DEEPSEEK_API_KEY production
    vercel env add MEM0_API_KEY production
    vercel env add JUPITER_API_KEY production
+   vercel env add BIRDEYE_API_KEY production
    vercel env add PRIORITY_FEE production
    vercel env add POOL production
    vercel env add MAX_TRADE_AMOUNT_SOL production
@@ -143,8 +145,9 @@ The frontend is served from `/public`:
 |----------|-------------|---------|
 | `SOLANA_RPC_URL` | Solana RPC endpoint | `https://api.mainnet-beta.solana.com` |
 | `SOLANA_PRIVATE_KEY` | Wallet private key (Base58) | Your wallet key |
-| `ANTHROPIC_API_KEY` | Claude API key | `sk-ant-...` |
+| `DEEPSEEK_API_KEY` | DeepSeek API key | `sk-...` |
 | `MEM0_API_KEY` | Mem0 memory API key | `m0-...` |
+| `BIRDEYE_API_KEY` | Birdeye API key | Your Birdeye key |
 
 ### Optional Variables
 
@@ -179,7 +182,8 @@ Rotate your API keys periodically:
 
 Vercel has built-in DDoS protection, but consider:
 - Jupiter API has rate limits (30 req/min without key)
-- Anthropic API has usage limits
+- Birdeye API has rate limits (1 call/min in current implementation)
+- DeepSeek API has usage limits
 - Implement client-side request throttling
 
 ## Monitoring & Logs
