@@ -65,11 +65,18 @@ async function main() {
     riskTolerance: (process.env.RISK_TOLERANCE as any) || 'moderate',
   };
 
+  // Get Birdeye API key (required)
+  const birdeyeApiKey = process.env.BIRDEYE_API_KEY;
+  if (!birdeyeApiKey) {
+    console.error('❌ BIRDEYE_API_KEY not found in environment variables');
+    process.exit(1);
+  }
+
   // Get BitQuery API keys (optional)
   const bitQueryV1Key = process.env.BITQUERY_API_KEY_V1;
   const bitQueryV2Key = process.env.BITQUERY_API_KEY_V2;
 
-  const agent = new TradingAgent(openaiKey, wallet, pumpFun, agentConfig, memory, bitQueryV1Key, bitQueryV2Key);
+  const agent = new TradingAgent(openaiKey, wallet, pumpFun, agentConfig, memory, birdeyeApiKey, bitQueryV1Key, bitQueryV2Key);
   console.log(`🤖 Trading Agent initialized with ${agentConfig.riskTolerance} risk tolerance (using DeepSeek deepseek-chat)\n`);
 
   // Initialize autonomous trading scheduler

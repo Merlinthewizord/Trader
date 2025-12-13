@@ -52,7 +52,9 @@ body {
   color: var(--primary-green);
   overflow: hidden;
   height: 100vh;
+  height: 100dvh; /* Dynamic viewport height for mobile */
   position: relative;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
 /* === BACKGROUND EFFECTS === */
@@ -260,6 +262,7 @@ body {
   gap: var(--gap-md);
   flex: 1;
   overflow: hidden;
+  min-height: 0; /* Allow grid items to shrink */
 }
 
 /* === PANELS === */
@@ -273,6 +276,8 @@ body {
   backdrop-filter: blur(10px);
   box-shadow: var(--shadow);
   transition: border-color 0.3s ease;
+  min-height: 0; /* Allow panel to shrink */
+  max-height: 100%; /* Prevent overflow */
 }
 
 .panel:hover {
@@ -332,7 +337,11 @@ body {
 .panel-content {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: var(--gap-lg);
+  min-height: 0; /* Allow scrolling */
+  max-height: 100%; /* Prevent overflow */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
 /* Custom Scrollbar */
@@ -358,6 +367,9 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--gap-md);
+  overflow-y: auto;
+  max-height: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 
 .system-boot-message {
@@ -727,6 +739,10 @@ body {
 /* === DECISION DISPLAY === */
 .decision-display {
   min-height: 100px;
+  max-height: 400px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .decision-placeholder {
@@ -818,6 +834,9 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--gap-md);
+  overflow-y: auto;
+  max-height: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 
 .no-data {
@@ -882,6 +901,8 @@ body {
 }
 
 /* === RESPONSIVE === */
+
+/* Tablet landscape and smaller desktops */
 @media (max-width: 1400px) {
   .content-grid {
     grid-template-columns: 1fr 1fr;
@@ -890,8 +911,13 @@ body {
   .transactions-panel {
     grid-column: 1 / -1;
   }
+
+  .balance-amount {
+    font-size: 36px;
+  }
 }
 
+/* Tablet portrait */
 @media (max-width: 900px) {
   .content-grid {
     grid-template-columns: 1fr;
@@ -900,6 +926,276 @@ body {
   .main-header {
     flex-direction: column;
     gap: var(--gap-md);
+    padding: var(--gap-md);
+  }
+
+  .logo-text {
+    font-size: 20px;
+    letter-spacing: 3px;
+  }
+
+  .logo-subtitle {
+    font-size: 8px;
+    letter-spacing: 2px;
+  }
+
+  .system-status {
+    gap: var(--gap-md);
+  }
+
+  .balance-amount {
+    font-size: 32px;
+  }
+
+  .metrics-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Mobile landscape */
+@media (max-width: 768px) {
+  .container {
+    padding: var(--gap-sm);
+    gap: var(--gap-sm);
+  }
+
+  .main-header {
+    padding: var(--gap-sm) var(--gap-md);
+  }
+
+  .logo-icon {
+    font-size: 24px;
+  }
+
+  .logo-text {
+    font-size: 18px;
+    letter-spacing: 2px;
+  }
+
+  .panel-content {
+    padding: var(--gap-md);
+  }
+
+  .panel-footer {
+    padding: var(--gap-md);
+  }
+
+  .control-group {
+    flex-direction: column;
+  }
+
+  .balance-amount {
+    font-size: 28px;
+  }
+
+  .balance-currency {
+    font-size: 16px;
+  }
+}
+
+/* Mobile portrait */
+@media (max-width: 480px) {
+  body {
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  .container {
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: var(--gap-sm);
+    gap: var(--gap-sm);
+  }
+
+  .content-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-sm);
+    overflow: visible;
+  }
+
+  .panel {
+    max-height: none;
+    min-height: 300px;
+  }
+
+  .activity-panel {
+    order: 1;
+    min-height: 400px;
+  }
+
+  .stats-panel {
+    order: 2;
+  }
+
+  .transactions-panel {
+    order: 3;
+    min-height: 300px;
+  }
+
+  .main-header {
+    flex-direction: column;
+    gap: var(--gap-sm);
+    padding: var(--gap-sm);
+  }
+
+  .header-center {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .logo {
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .logo-icon {
+    font-size: 20px;
+  }
+
+  .logo-text {
+    font-size: 16px;
+    letter-spacing: 2px;
+  }
+
+  .logo-subtitle {
+    font-size: 7px;
+    letter-spacing: 1px;
+  }
+
+  .system-status {
+    flex-direction: row;
+    gap: var(--gap-md);
+  }
+
+  .timestamp {
+    font-size: 11px;
+    text-align: center;
+  }
+
+  .panel-header {
+    padding: var(--gap-sm) var(--gap-md);
+  }
+
+  .panel-title {
+    font-size: 12px;
+    letter-spacing: 2px;
+  }
+
+  .panel-content {
+    padding: var(--gap-sm) var(--gap-md);
+  }
+
+  .panel-footer {
+    padding: var(--gap-sm) var(--gap-md);
+  }
+
+  .chat-input-container {
+    flex-direction: column;
+  }
+
+  .chat-input,
+  .chat-send-btn {
+    width: 100%;
+  }
+
+  .control-group {
+    flex-direction: column;
+    gap: var(--gap-sm);
+  }
+
+  .primary-btn,
+  .secondary-btn {
+    width: 100%;
+    padding: 14px 20px;
+    font-size: 11px;
+  }
+
+  .balance-display {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .balance-amount {
+    font-size: 32px;
+  }
+
+  .balance-currency {
+    font-size: 14px;
+  }
+
+  .balance-usd {
+    font-size: 14px;
+    text-align: center;
+  }
+
+  .wallet-address {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .address-value {
+    font-size: 9px;
+    word-break: break-all;
+  }
+
+  .metrics-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--gap-sm);
+  }
+
+  .metric-item {
+    padding: var(--gap-sm);
+  }
+
+  .metric-value {
+    font-size: 20px;
+  }
+
+  .card-content {
+    padding: var(--gap-md);
+  }
+
+  .stat-card {
+    margin-bottom: var(--gap-sm);
+  }
+
+  /* Make scrollbars always visible on mobile */
+  .panel-content::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .activity-feed::-webkit-scrollbar,
+  .transactions-list::-webkit-scrollbar,
+  .decision-display::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .activity-feed::-webkit-scrollbar-track,
+  .transactions-list::-webkit-scrollbar-track,
+  .decision-display::-webkit-scrollbar-track {
+    background: var(--bg-dark);
+  }
+
+  .activity-feed::-webkit-scrollbar-thumb,
+  .transactions-list::-webkit-scrollbar-thumb,
+  .decision-display::-webkit-scrollbar-thumb {
+    background: rgba(0, 255, 65, 0.3);
+    border-radius: 3px;
+  }
+
+  .activity-feed::-webkit-scrollbar-thumb:hover,
+  .transactions-list::-webkit-scrollbar-thumb:hover,
+  .decision-display::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 255, 65, 0.5);
   }
 }
 
