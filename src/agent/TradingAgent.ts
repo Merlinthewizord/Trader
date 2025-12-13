@@ -172,7 +172,7 @@ export class TradingAgent {
     );
 
     const completion = await this.anthropic.messages.create({
-      model: 'claude-3-opus-20240229',
+      model: 'claude-sonnet-4-5-20250929',
       max_tokens: 1024,
       system: 'You are an expert Solana trading agent analyzing market conditions to make informed trading decisions.',
       messages: [
@@ -219,7 +219,7 @@ You can:
 Be conversational, informative, and strategic. Always explain your reasoning clearly.`;
 
     const completion = await this.anthropic.messages.create({
-      model: 'claude-3-opus-20240229',
+      model: 'claude-sonnet-4-5-20250929',
       max_tokens: 2048,
       system: systemPrompt,
       messages: this.conversationHistory,
