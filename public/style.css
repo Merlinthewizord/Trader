@@ -1,5 +1,6 @@
 /* ==========================================
-   NEXUS TRADING AGENT - SHONEN JUMP STYLE
+   Jidō torihiki ninjarobotto (自動取引忍者ロボット)
+   AUTOMATIC TRADING NINJA ROBOT - SHONEN JUMP STYLE
    Inspired by anime/manga aesthetics
    ========================================== */
 
@@ -171,8 +172,8 @@ html, body {
 
 .logo-text {
   font-family: 'Bangers', cursive;
-  font-size: 3em;
-  letter-spacing: 4px;
+  font-size: 2.2em;
+  letter-spacing: 2px;
   color: var(--bg-darker);
   text-shadow:
     3px 3px 0px #FFFFFF,
@@ -446,12 +447,12 @@ html, body {
 
 .character-name {
   font-family: 'Bangers', cursive;
-  font-size: 2.5em;
+  font-size: 2em;
   color: #FFFFFF;
   text-shadow:
     3px 3px 0px var(--bg-darker),
     6px 6px 0px rgba(0, 0, 0, 0.3);
-  letter-spacing: 3px;
+  letter-spacing: 2px;
 }
 
 .character-tagline {
