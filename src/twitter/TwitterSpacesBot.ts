@@ -46,10 +46,17 @@ export class TwitterSpacesBot {
     console.log(`🔑 Initializing Twitter API with Bearer Token (${config.twitterBearerToken.substring(0, 20)}...)`);
     this.twitterClient = new TwitterApi(config.twitterBearerToken);
 
+ claude/integrate-bird-eye-api-01AbvTzCSMpxkL41sufSpMpp
+    // Initialize OpenAI client (using Anthropic API for chat)
+    this.openai = new OpenAI({
+      apiKey: config.openaiApiKey,
+      baseURL: 'https://api.anthropic.com/v1',
+
     // Initialize OpenAI client (using DeepSeek for chat, regular OpenAI for audio)
     this.openai = new OpenAI({
       apiKey: config.openaiApiKey,
       baseURL: 'https://api.deepseek.com',
+ claude/solana-trading-agent-01LZf8krEsvHx5kPyZFXd35D
     });
 
     // Initialize ElevenLabs if API key provided
@@ -286,7 +293,11 @@ export class TwitterSpacesBot {
       const recentHistory = this.conversationHistory.slice(-10);
 
       const completion = await this.openai.chat.completions.create({
+ claude/integrate-bird-eye-api-01AbvTzCSMpxkL41sufSpMpp
+        model: 'claude-3-5-sonnet-20241022',
+=======
         model: 'deepseek-chat',
+ claude/solana-trading-agent-01LZf8krEsvHx5kPyZFXd35D
         messages: [
           { role: 'system', content: systemPrompt },
           ...recentHistory,
