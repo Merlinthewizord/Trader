@@ -22,6 +22,10 @@ class TradingTerminal {
   init() {
     this.setupWebSocket();
     this.setupEventListeners();
+    this.refreshTransactions(); // Load initial transactions
+
+    // Refresh transactions every 30 seconds
+    setInterval(() => this.refreshTransactions(), 30000);
   }
 
   setupWebSocket() {
@@ -130,6 +134,10 @@ class TradingTerminal {
         this.updateWalletInfo(message.data);
         break;
 
+      case 'autonomous_event':
+        this.handleAutonomousEvent(message.data);
+        break;
+
       case 'thinking':
         this.addMessage('thinking', message.data.message);
         break;
@@ -221,28 +229,86 @@ class TradingTerminal {
     }
   }
 
+  async handleAutonomousEvent(event) {
+    console.log('Autonomous event:', event);
+
+    switch (event.type) {
+      case 'analysis':
+        if (event.data.message) {
+          this.addMessage('thinking', event.data.message);
+        }
+        break;
+
+      case 'decision':
+        this.displayTradeDecision(event.data);
+        break;
+
+      case 'trade':
+        // Trade was executed
+        const tradeMsg = `✅ Trade executed: ${event.data.action.toUpperCase()} ${event.data.tokenSymbol || 'token'} (${event.data.confidence}% confidence)`;
+        this.addMessage('assistant', tradeMsg);
+
+        if (event.data.signature) {
+          this.addMessage('assistant', `📝 Signature: ${event.data.signature.substring(0, 30)}...`);
+        }
+
+        // Refresh transaction log immediately
+        await this.refreshTransactions();
+        break;
+
+      case 'error':
+        this.addMessage('error', event.data.message || 'An error occurred');
+        break;
+
+      default:
+        if (event.data && event.data.message) {
+          this.addMessage('assistant', event.data.message);
+        }
+    }
+  }
+
+  async refreshTransactions() {
+    try {
+      const response = await fetch('/api/wallet/transactions?limit=10');
+      const data = await response.json();
+
+      if (data.transactions && data.transactions.length > 0) {
+        this.updateTransactionLog(data.transactions);
+      }
+    } catch (error) {
+      console.error('Error refreshing transactions:', error);
+    }
+  }
+
+  updateTransactionLog(transactions) {
+    const placeholder = this.elements.transactionsContainer.querySelector('.placeholder');
+    if (placeholder) placeholder.remove();
+
+    this.elements.transactionsContainer.innerHTML = transactions
+      .map((tx) => {
+        return `
+          <div class="transaction-item">
+            <div class="tx-time">${tx.timestamp}</div>
+            <div class="tx-type">${tx.type}</div>
+            <div class="tx-status">${tx.status}</div>
+            <div class="tx-signature">
+              <a href="https://solscan.io/tx/${tx.signature}" target="_blank">
+                ${tx.signature.substring(0, 20)}...
+              </a>
+            </div>
+            <div class="tx-fee">Fee: ${tx.fee}</div>
+          </div>
+        `;
+      })
+      .join('');
+  }
+
   updateWalletInfo(data) {
     this.elements.solBalance.textContent = data.balance.toFixed(4);
     this.elements.walletAddress.textContent = `Address: ${data.address}`;
 
     if (data.transactions && data.transactions.length > 0) {
-      const placeholder = this.elements.transactionsContainer.querySelector('.placeholder');
-      if (placeholder) placeholder.remove();
-
-      this.elements.transactionsContainer.innerHTML = data.transactions
-        .map((tx) => {
-          const date = new Date(tx.blockTime * 1000).toLocaleString();
-          return `
-            <div class="transaction-item">
-              <div>Block: ${tx.slot}</div>
-              <div>Time: ${date}</div>
-              <div class="transaction-signature">
-                ${tx.signature.substring(0, 40)}...
-              </div>
-            </div>
-          `;
-        })
-        .join('');
+      this.updateTransactionLog(data.transactions);
     }
   }
 
