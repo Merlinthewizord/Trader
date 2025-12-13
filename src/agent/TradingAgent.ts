@@ -1,4 +1,4 @@
-import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
 import { SolanaWallet, TokenHolding } from '../wallet/SolanaWallet';
 import { PumpFunClient, TokenInfo } from '../trading/PumpFunClient';
 import { MemoryService } from '../memory/MemoryService';
@@ -34,7 +34,7 @@ export interface AgentConfig {
 }
 
 export class TradingAgent {
-  private openai: OpenAI;
+  private anthropic: Anthropic;
   private wallet: SolanaWallet;
   private pumpFun: PumpFunClient;
   private config: AgentConfig;
@@ -42,7 +42,7 @@ export class TradingAgent {
   private knowledgeBase: KnowledgeBase;
   private dexScreener: DexScreenerClient;
   private bitQuery?: BitQueryClient;
-  private conversationHistory: { role: 'user' | 'assistant' | 'system'; content: string }[] = [];
+  private conversationHistory: { role: 'user' | 'assistant'; content: string }[] = [];
 
   constructor(
     apiKey: string,
@@ -53,9 +53,8 @@ export class TradingAgent {
     bitQueryV1Key?: string,
     bitQueryV2Key?: string
   ) {
-    this.openai = new OpenAI({
+    this.anthropic = new Anthropic({
       apiKey,
-      baseURL: 'https://api.anthropic.com/v1',
     });
     this.wallet = wallet;
     this.pumpFun = pumpFun;
@@ -172,16 +171,16 @@ export class TradingAgent {
       portfolio
     );
 
-    const completion = await this.openai.chat.completions.create({
+    const completion = await this.anthropic.messages.create({
       model: 'claude-3-5-sonnet-20241022',
       max_tokens: 1024,
+      system: 'You are an expert Solana trading agent analyzing market conditions to make informed trading decisions.',
       messages: [
-        { role: 'system', content: 'You are an expert Solana trading agent analyzing market conditions to make informed trading decisions.' },
         { role: 'user', content: prompt }
       ],
     });
 
-    const response = completion.choices[0]?.message?.content || '';
+    const response = completion.content[0].type === 'text' ? completion.content[0].text : '';
     const decision = this.parseTradeDecision(response);
 
     // Log the decision to memory (even if not executed yet)
@@ -219,18 +218,14 @@ You can:
 
 Be conversational, informative, and strategic. Always explain your reasoning clearly.`;
 
-    const messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }> = [
-      { role: 'system', content: systemPrompt },
-      ...this.conversationHistory,
-    ];
-
-    const completion = await this.openai.chat.completions.create({
+    const completion = await this.anthropic.messages.create({
       model: 'claude-3-5-sonnet-20241022',
       max_tokens: 2048,
-      messages: messages,
+      system: systemPrompt,
+      messages: this.conversationHistory,
     });
 
-    const response = completion.choices[0]?.message?.content || '';
+    const response = completion.content[0].type === 'text' ? completion.content[0].text : '';
 
     this.conversationHistory.push({
       role: 'assistant',
