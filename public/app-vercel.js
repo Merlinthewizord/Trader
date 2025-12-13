@@ -5,8 +5,8 @@ class TradingTerminal {
     this.pollingInterval = null;
     this.elements = {
       chatContainer: document.getElementById('chat-container'),
-      toggleTradingBtn: document.getElementById('toggle-trading-btn'),
-      analyzeBtn: document.getElementById('analyze-btn'),
+      chatInput: document.getElementById('chat-input'),
+      sendChatBtn: document.getElementById('send-chat-btn'),
       solBalance: document.getElementById('sol-balance'),
       walletAddress: document.getElementById('wallet-address'),
       reasoningContainer: document.getElementById('reasoning-container'),
@@ -25,8 +25,8 @@ class TradingTerminal {
     this.updateTradingStatus();
     this.updateTimestamp();
 
-    // Poll wallet balance every 30 seconds as backup
-    this.pollingInterval = setInterval(() => this.updateWalletInfo(), 30000);
+    // Poll wallet balance every 2 minutes to avoid rate limits
+    this.pollingInterval = setInterval(() => this.updateWalletInfo(), 120000);
 
     // Update timestamp every second
     setInterval(() => this.updateTimestamp(), 1000);
@@ -190,18 +190,17 @@ class TradingTerminal {
       if (response.ok) {
         const isRunning = data.running;
         const statusEl = this.elements.tradingStatus;
-        const btnEl = this.elements.toggleTradingBtn;
 
-        if (isRunning) {
-          statusEl.classList.add('connected');
-          statusEl.querySelector('.status-text').textContent = '🤖 Auto-Trading';
-          btnEl.textContent = '⏸️ Stop Auto-Trading';
-          btnEl.setAttribute('data-running', 'true');
-        } else {
-          statusEl.classList.remove('connected');
-          statusEl.querySelector('.status-text').textContent = '⏸️ Paused';
-          btnEl.textContent = '▶️ Start Auto-Trading';
-          btnEl.setAttribute('data-running', 'false');
+        if (statusEl) {
+          if (isRunning) {
+            statusEl.classList.add('connected');
+            const statusText = statusEl.querySelector('.status-text');
+            if (statusText) statusText.textContent = 'ACTIVE';
+          } else {
+            statusEl.classList.remove('connected');
+            const statusText = statusEl.querySelector('.status-text');
+            if (statusText) statusText.textContent = 'STANDBY';
+          }
         }
       }
     } catch (error) {
@@ -210,8 +209,36 @@ class TradingTerminal {
   }
 
   setupEventListeners() {
-    this.elements.toggleTradingBtn.addEventListener('click', () => this.toggleTrading());
-    this.elements.analyzeBtn.addEventListener('click', () => this.analyzeMarket());
+    // Chat functionality
+    if (this.elements.sendChatBtn) {
+      this.elements.sendChatBtn.addEventListener('click', () => this.sendChat());
+    }
+    if (this.elements.chatInput) {
+      this.elements.chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') this.sendChat();
+      });
+    }
+  }
+
+  sendChat() {
+    const message = this.elements.chatInput.value.trim();
+    if (!message) return;
+
+    // Clear input
+    this.elements.chatInput.value = '';
+
+    // Add user message to activity feed
+    this.addActivityLog('user', message);
+
+    // Send to server via WebSocket
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({
+        type: 'chat',
+        data: { message }
+      }));
+    } else {
+      this.addActivityLog('error', 'Not connected to server. Please refresh the page.');
+    }
   }
 
   async toggleTrading() {
@@ -312,24 +339,58 @@ class TradingTerminal {
       if (balanceResponse.ok) {
         this.elements.solBalance.textContent = balanceData.balance.toFixed(4);
         this.elements.walletAddress.innerHTML = `<span class="address-label">ADDRESS:</span> <span class="address-value">${balanceData.address}</span>`;
+      } else if (balanceResponse.status === 429) {
+        console.warn('⚠️ Rate limited - will retry later');
+        return; // Skip transactions if rate limited
       }
 
-      const txResponse = await fetch('/api/wallet/transactions?limit=5');
+      const txResponse = await fetch('/api/wallet/transactions?limit=3');
       const txData = await txResponse.json();
 
       if (txResponse.ok && txData.transactions && txData.transactions.length > 0) {
-        const placeholder = this.elements.transactionsContainer.querySelector('.placeholder');
+        const placeholder = this.elements.transactionsContainer.querySelector('.placeholder, .no-data');
         if (placeholder) placeholder.remove();
 
         this.elements.transactionsContainer.innerHTML = txData.transactions
           .map((tx) => {
+            // Format timestamp
+            const timestamp = tx.blockTime
+              ? new Date(tx.blockTime * 1000).toLocaleString()
+              : 'Unknown time';
+
+            // Shorten asset address if it's a long token mint
+            let assetDisplay = tx.asset || 'Unknown';
+            if (assetDisplay.length > 20) {
+              assetDisplay = assetDisplay.substring(0, 8) + '...' + assetDisplay.substring(assetDisplay.length - 6);
+            }
+
+            // Format amount with proper decimals
+            const amountDisplay = typeof tx.amount === 'number' && tx.amount > 0
+              ? tx.amount.toFixed(6)
+              : '0';
+
+            // Get action emoji
+            const actionEmoji = {
+              'Buy': '🟢',
+              'Sell': '🔴',
+              'Send': '📤',
+              'Receive': '📥',
+              'Unknown': '❓'
+            }[tx.action] || '❓';
+
             return `
               <div class="transaction-item">
-                <div style="font-weight: bold;">${tx.type} ${tx.status}</div>
-                <div style="font-size: 0.9em; opacity: 0.8;">${tx.timestamp}</div>
-                <div style="font-size: 0.85em;">Fee: ${tx.fee}</div>
-                <div class="transaction-signature" style="font-size: 0.8em; opacity: 0.6;">
-                  ${tx.signature.substring(0, 30)}...
+                <div style="font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                  ${actionEmoji} ${tx.action || 'Unknown'} ${assetDisplay}
+                </div>
+                <div style="font-size: 0.9em; margin-top: 4px;">
+                  Amount: ${amountDisplay} • Fee: ${(tx.fee || 0).toFixed(6)} SOL
+                </div>
+                <div style="font-size: 0.85em; opacity: 0.7; margin-top: 4px;">
+                  ${timestamp}
+                </div>
+                <div style="font-size: 0.8em; opacity: 0.5; margin-top: 4px; font-family: monospace;">
+                  ${tx.signature.substring(0, 16)}...
                 </div>
               </div>
             `;

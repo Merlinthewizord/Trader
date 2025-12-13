@@ -4,7 +4,7 @@ An AI-powered trading agent for Solana blockchain integrated with pump.fun. Feat
 
 ## Features
 
-- **AI-Powered Trading**: Uses Claude (Anthropic) to analyze markets and make intelligent trading decisions
+- **AI-Powered Trading**: Uses DeepSeek AI to analyze markets and make intelligent trading decisions
 - **Persistent Memory**: Powered by Mem0 - the agent learns from every trade to improve over time
 - **Solana Wallet Integration**: Complete wallet management with balance tracking
 - **PumpPortal Trading API**: Execute trades via PumpPortal's local trading API
@@ -24,7 +24,7 @@ An AI-powered trading agent for Solana blockchain integrated with pump.fun. Feat
 ```
 src/
 ├── agent/
-│   └── TradingAgent.ts      # AI agent with Claude integration
+│   └── TradingAgent.ts      # AI agent with DeepSeek integration
 ├── memory/
 │   └── MemoryService.ts     # Mem0 integration for learning
 ├── wallet/
@@ -45,7 +45,7 @@ public/
 
 - Node.js 18+ and npm
 - Solana wallet with private key (mainnet or devnet)
-- Anthropic API key
+- DeepSeek API key
 - Mem0 API key
 - SOL tokens for trading
 
@@ -67,8 +67,8 @@ Edit `.env` with your credentials:
 SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
 SOLANA_PRIVATE_KEY=your_base58_private_key_here
 
-# Anthropic API
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
+# DeepSeek API
+DEEPSEEK_API_KEY=your_deepseek_api_key_here
 
 # Mem0 API (for agent memory)
 MEM0_API_KEY=your_mem0_api_key_here
@@ -105,9 +105,9 @@ On first run without a private key, a new wallet will be generated and printed t
 
 ⚠️ **Security Warning**: Never share your private key or commit it to version control!
 
-### Anthropic API Key
+### DeepSeek API Key
 
-1. Sign up at [console.anthropic.com](https://console.anthropic.com)
+1. Sign up at [platform.deepseek.com](https://platform.deepseek.com)
 2. Navigate to API Keys
 3. Create a new API key
 4. Copy and add to `.env`
@@ -300,8 +300,8 @@ The server exposes these REST endpoints:
    - Rotate keys regularly
 
 2. **API Key Protection**:
-   - Keep Anthropic API key secure
-   - Monitor usage on Anthropic console
+   - Keep DeepSeek API key secure
+   - Monitor usage on DeepSeek console
    - Set spending limits if available
 
 3. **Trading Safety**:

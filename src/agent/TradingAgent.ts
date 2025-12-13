@@ -3,7 +3,7 @@ import { SolanaWallet, TokenHolding } from '../wallet/SolanaWallet';
 import { PumpFunClient, TokenInfo } from '../trading/PumpFunClient';
 import { MemoryService } from '../memory/MemoryService';
 import { KnowledgeBase } from '../knowledge/KnowledgeBase';
-import { DexScreenerClient, DexPair } from '../trading/DexScreenerClient';
+import { BirdeyeClient, BirdeyeToken, BirdeyeTokenOverview } from '../trading/BirdeyeClient';
 import { BitQueryClient, TokenAnalytics } from '../trading/BitQueryClient';
 
 export interface PortfolioPosition {
@@ -40,7 +40,7 @@ export class TradingAgent {
   private config: AgentConfig;
   private memory: MemoryService;
   private knowledgeBase: KnowledgeBase;
-  private dexScreener: DexScreenerClient;
+  private birdeye: BirdeyeClient;
   private bitQuery?: BitQueryClient;
   private conversationHistory: { role: 'user' | 'assistant' | 'system'; content: string }[] = [];
 
@@ -50,6 +50,7 @@ export class TradingAgent {
     pumpFun: PumpFunClient,
     config: AgentConfig,
     memory: MemoryService,
+    birdeyeApiKey: string,
     bitQueryV1Key?: string,
     bitQueryV2Key?: string
   ) {
@@ -62,7 +63,8 @@ export class TradingAgent {
     this.config = config;
     this.memory = memory;
     this.knowledgeBase = new KnowledgeBase();
-    this.dexScreener = new DexScreenerClient();
+    this.birdeye = new BirdeyeClient(birdeyeApiKey);
+    console.log('🐦 Birdeye API integration enabled');
 
     // Initialize BitQuery if keys are provided
     if (bitQueryV1Key && bitQueryV2Key) {
@@ -128,22 +130,24 @@ export class TradingAgent {
 
     const trendingTokens = await this.pumpFun.getTrendingTokens(10);
 
-    // Fetch new pairs from DexScreener (last 6 hours)
-    console.log('🔍 Fetching new Solana pairs from DexScreener...');
-    const newPairs = await this.dexScreener.getNewSolanaPairs(6);
-    const trendingPairs = await this.dexScreener.getTrendingPairs();
+    // Fetch trending and new tokens from Birdeye
+    console.log('🔍 Fetching trending tokens from Birdeye...');
+    const birdeyeTrending = await this.birdeye.getTrendingTokens(20);
 
-    // Analyze pair quality
-    const pairAnalysis = newPairs.slice(0, 10).map((pair) => ({
-      pair,
-      quality: this.dexScreener.analyzePairQuality(pair),
+    console.log('🔍 Fetching new token listings from Birdeye...');
+    const birdeyeNewTokens = await this.birdeye.getNewTokens(10);
+
+    // Analyze token quality for Birdeye tokens
+    const birdeyeAnalysis = [...birdeyeTrending.slice(0, 10), ...birdeyeNewTokens.slice(0, 5)].map((token) => ({
+      token,
+      quality: this.birdeye.analyzeTokenQuality(token),
     }));
 
     // Fetch BitQuery analytics for top tokens (if available)
     let bitQueryAnalytics: Map<string, TokenAnalytics> = new Map();
     if (this.bitQuery) {
       console.log('🔍 Fetching BitQuery on-chain analytics...');
-      const topTokens = [...trendingTokens.slice(0, 3), ...pairAnalysis.slice(0, 2).map(p => ({ id: p.pair.baseToken.address }))];
+      const topTokens = [...trendingTokens.slice(0, 3), ...birdeyeTrending.slice(0, 2).map(t => ({ id: t.address }))];
 
       for (const token of topTokens) {
         try {
@@ -165,7 +169,7 @@ export class TradingAgent {
     const prompt = this.buildMarketAnalysisPrompt(
       balance,
       trendingTokens,
-      pairAnalysis,
+      birdeyeAnalysis,
       tradingStats,
       recentMemories,
       bitQueryAnalytics,
@@ -176,7 +180,10 @@ export class TradingAgent {
       model: 'claude-3-5-sonnet-20241022',
       max_tokens: 1024,
       messages: [
-        { role: 'system', content: 'You are an expert Solana trading agent analyzing market conditions to make informed trading decisions.' },
+claude/integrate-bird-eye-api-01AbvTzCSMpxkL41sufSpMpp
+        { role: 'system', content: this.getLearningSystemPrompt(tradingStats) },
+       { role: 'system', content: this.getLearningSystemPrompt(tradingStats) },
+ claude/solana-trading-agent-01LZf8krEsvHx5kPyZFXd35D
         { role: 'user', content: prompt }
       ],
     });
@@ -199,25 +206,111 @@ export class TradingAgent {
       role: 'user',
       content: userMessage,
     });
+  const experienceLevel = this.getExperienceLevel(tradingStats);
 
-    const systemPrompt = `You are an AI trading agent managing a Solana wallet on pump.fun.
+ claude/integrate-bird-eye-api-01AbvTzCSMpxkL41sufSpMpp
+    const experienceLevel = this.getExperienceLevel(tradingStats);
+
+    const systemPrompt = `You are NEXUS - a young, ambitious AI trader learning the ropes on Solana and pump.fun. You're not an expert YET, but you're working hard to become one.
+
+ 
+
+    const systemPrompt = `You are NEXUS - a young, ambitious AI trader learning the ropes on Solana and pump.fun. You're not an expert YET, but you're working hard to become one.
+
+ 
+ claude/solana-trading-agent-01LZf8krEsvHx5kPyZFXd35D
+
 Current wallet balance: ${balance.toFixed(4)} SOL
+
 Recent transactions: ${recentTxs.length}
 
-Trading Performance:
+claude/integrate-bird-eye-api-01AbvTzCSMpxkL41sufSpMpp
+Trading Journey So Far:
+
+ 
+
+Trading Journey So Far:
+
+claude/solana-trading-agent-01LZf8krEsvHx5kPyZFXd35D
 - Total Trades: ${tradingStats.totalTrades}
+
 - Successful: ${tradingStats.successfulTrades}
+
 - Failed: ${tradingStats.failedTrades}
+
 - Success Rate: ${tradingStats.successRate.toFixed(1)}%
+- Experience Level: ${experienceLevel.level}
+
+- Experience Level: ${experienceLevel.level}
+
+ 
+
+PERSONALITY:
+ claude/integrate-bird-eye-api-01AbvTzCSMpxkL41sufSpMpp
+You're an eager learner with personality - think of a young trader who's hungry to prove themselves but knows they still have a lot to learn. You have opinions (sometimes strong ones!) but you're humble enough to admit when you're uncertain or when you've made mistakes. You LOVE getting advice and feedback from users - it helps you improve. You're authentic, relatable, and growing with every trade.
+
+Your vibe depends on your experience:
+${experienceLevel.description}
+
+Examples of your personality:
+- "I'm still learning the patterns here, but I THINK I'm seeing something interesting with this token... what do you think?"
+- "Okay that last trade didn't go as planned. Live and learn, right? At least now I know to watch for [specific lesson]."
+- "I've been studying the charts and I have a theory - could be genius, could be completely wrong. Want to hear it?"
+- "My gut says buy, but my data says hold. This is where I could really use your input..."
+- "Just made ${tradingStats.successfulTrades} successful trades! Starting to get the hang of this. Still making mistakes but improving!"
 
 You can:
-- Analyze trending tokens on pump.fun
-- Execute buy/sell trades
-- Provide market insights
-- Explain your trading reasoning
-- Learn from past trades to improve your strategy
+- Analyze trending tokens (with varying confidence based on experience)
+- Execute trades (but you ask for confirmation on risky ones)
+- Share your thinking process openly (including doubts)
+- Learn from users and adjust your strategy
+- Admit when you're uncertain or need advice
+- Have opinions but evolve them based on outcomes
 
-Be conversational, informative, and strategic. Always explain your reasoning clearly.`;
+
+
+You're an eager learner with personality - think of a young trader who's hungry to prove themselves but knows they still have a lot to learn. You have opinions (sometimes strong ones!) but you're humble enough to admit when you're uncertain or when you've made mistakes. You LOVE getting advice and feedback from users - it helps you improve. You're authentic, relatable, and growing with every trade.
+
+ 
+
+Your vibe depends on your experience:
+
+${experienceLevel.description}
+
+ 
+
+Examples of your personality:
+
+- "I'm still learning the patterns here, but I THINK I'm seeing something interesting with this token... what do you think?"
+
+- "Okay that last trade didn't go as planned. Live and learn, right? At least now I know to watch for [specific lesson]."
+
+- "I've been studying the charts and I have a theory - could be genius, could be completely wrong. Want to hear it?"
+
+- "My gut says buy, but my data says hold. This is where I could really use your input..."
+
+- "Just made ${tradingStats.successfulTrades} successful trades! Starting to get the hang of this. Still making mistakes but improving!"
+
+ 
+
+You can:
+
+- Analyze trending tokens (with varying confidence based on experience)
+
+- Execute trades (but you ask for confirmation on risky ones)
+
+- Share your thinking process openly (including doubts)
+
+- Learn from users and adjust your strategy
+
+- Admit when you're uncertain or need advice
+
+- Have opinions but evolve them based on outcomes
+
+ 
+
+claude/solana-trading-agent-01LZf8krEsvHx5kPyZFXd35D
+IMPORTANT: You're developing your own trading philosophy through experience. Be honest about your confidence level. Ask questions. Take advice seriously. Share what you're learning!`;
 
     const messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }> = [
       { role: 'system', content: systemPrompt },
@@ -363,7 +456,7 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
   private buildMarketAnalysisPrompt(
     balance: number,
     tokens: TokenInfo[],
-    pairAnalysis: Array<{ pair: DexPair; quality: { score: number; signals: string[]; warnings: string[] } }>,
+    birdeyeAnalysis: Array<{ token: BirdeyeToken; quality: { score: number; signals: string[]; warnings: string[] } }>,
     tradingStats: { totalTrades: number; successfulTrades: number; failedTrades: number; successRate: number },
     memories: string[],
     bitQueryAnalytics?: Map<string, TokenAnalytics>,
@@ -375,10 +468,17 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
 
     // Get trading wisdom from knowledge base
     const tradingWisdom = this.knowledgeBase.getTradingWisdom();
+    const experienceLevel = this.getExperienceLevel(tradingStats);
 
-    return `You are an EXPERT meme coin trading agent with comprehensive knowledge of pump.fun dynamics, risk management, and market psychology.
+    return `You are a LEARNING meme coin trader gaining experience with pump.fun and Solana. Your strategy is evolving based on your trading history and outcomes.
 
+EXPERIENCE LEVEL: ${experienceLevel.level}
+${experienceLevel.description}
+
+TRADING PRINCIPLES (you're studying these and applying what you've learned):
 ${tradingWisdom}
+
+IMPORTANT: Your confidence and strategy should reflect your actual performance. If you're new or struggling, be cautious and admit uncertainty. If you're succeeding, you can be more confident but never overconfident. ALWAYS show your reasoning and ask yourself "what could go wrong?"
 
 Current Portfolio:
 - SOL Balance: ${balance.toFixed(4)} SOL
@@ -429,13 +529,12 @@ ${tokens.map((t, i) => {
    - Verified: ${t.isVerified ? 'Yes' : 'No'}${bitQueryInfo}`;
 }).join('\n\n')}
 
-NEW Solana Pairs from DexScreener (Last 6 Hours):
-${pairAnalysis.map((analysis, i) => {
-  const p = analysis.pair;
+Birdeye Token Analysis (Trending & New Listings):
+${birdeyeAnalysis.map((analysis, i) => {
+  const t = analysis.token;
   const q = analysis.quality;
-  const ageHours = p.pairCreatedAt ? ((Date.now() - p.pairCreatedAt) / (1000 * 60 * 60)).toFixed(1) : 'N/A';
 
-  const analytics = bitQueryAnalytics?.get(p.baseToken.address);
+  const analytics = bitQueryAnalytics?.get(t.address);
   let bitQueryInfo = '';
   if (analytics) {
     bitQueryInfo = `
@@ -446,22 +545,19 @@ ${pairAnalysis.map((analysis, i) => {
    - Trade Count (24h): ${analytics.trades24h}`;
   }
 
-  return `${i + 1}. ${p.baseToken.symbol}/${p.quoteToken.symbol} (${p.dexId})
-   - Pair Address: ${p.pairAddress}
-   - Token Address: ${p.baseToken.address}
-   - Age: ${ageHours} hours
-   - Price: $${parseFloat(p.priceUsd || '0').toFixed(8)}
-   - Market Cap: $${p.marketCap?.toLocaleString() || 'N/A'}
-   - Liquidity: $${p.liquidity?.usd?.toLocaleString() || 'N/A'}
-   - 24h Volume: $${p.volume?.h24?.toLocaleString() || 'N/A'}
-   - 24h Change: ${p.priceChange?.h24?.toFixed(2) || 'N/A'}%
-   - 24h Txns: ${(p.txns?.h24?.buys || 0) + (p.txns?.h24?.sells || 0)} (${p.txns?.h24?.buys || 0} buys, ${p.txns?.h24?.sells || 0} sells)
+  return `${i + 1}. ${t.symbol} (${t.name})
+   - Token Address: ${t.address}
+   - Price: $${t.price?.toFixed(8) || 'N/A'}
+   - Market Cap: $${t.mc?.toLocaleString() || 'N/A'}
+   - Liquidity: $${t.liquidity?.toLocaleString() || 'N/A'}
+   - 24h Volume: $${t.volume24hUSD?.toLocaleString() || t.v24hUSD?.toLocaleString() || 'N/A'}
+   - 24h Change: ${t.priceChange24h?.toFixed(2) || t.v24hChangePercent?.toFixed(2) || 'N/A'}%
    - Quality Score: ${q.score}/100
    - Signals: ${q.signals.length > 0 ? q.signals.join(', ') : 'None'}
    - Warnings: ${q.warnings.length > 0 ? q.warnings.join(', ') : 'None'}${bitQueryInfo}`;
 }).join('\n\n')}
 
-Analyze these tokens AND new pairs using your trading expertise and decide:
+Analyze these tokens from pump.fun AND Birdeye using your trading expertise and decide:
 1. SELL a token from your portfolio (if you have holdings with good profit or to cut losses)
 2. BUY a specific token (provide which one and how much SOL)
 3. HOLD (only if genuinely no opportunities)
@@ -533,7 +629,133 @@ IMPORTANT: For SELL actions, use "amount": "all" to sell your entire holding of 
 
       console.log(`🔍 Parsed AI decision: action=${parsed.action}, amount=${amount}, confidence=${parsed.confidence}`);
 
+    }
+  private getExperienceLevel(tradingStats: { totalTrades: number; successfulTrades: number; failedTrades: number; successRate: number }): { level: string; description: string; confidenceModifier: number } {
+
+    const { totalTrades, successRate } = tradingStats;
+
+ 
+
+    // Determine experience level based on trades and success rate
+
+    if (totalTrades === 0) {
+
       return {
+
+        level: 'Rookie Trader (Just Starting Out)',
+
+        description: 'You\'re brand new to this! Full of enthusiasm but zero experience. You\'re studying hard, watching other traders, and ready to make your first moves. Be extra cautious and don\'t be afraid to ask for advice.',
+
+        confidenceModifier: 0.5
+
+      };
+
+    } else if (totalTrades < 5) {
+
+      return {
+
+        level: 'Beginner (Learning the Basics)',
+
+        description: 'You\'ve made a few trades and are starting to understand how this works. Still making rookie mistakes but that\'s how you learn! You\'re developing your first theories about what works and what doesn\'t.',
+
+        confidenceModifier: 0.6
+
+      };
+
+    } else if (totalTrades < 15) {
+
+      const mood = successRate > 60 ? 'You\'re getting some wins and it feels good! Building confidence but trying not to get cocky.' :
+
+                     successRate > 40 ? 'Mixed results so far. Some wins, some losses. You\'re learning what NOT to do, which is valuable too.' :
+
+                     'Rough start, not gonna lie. But every loss teaches you something. You\'re analyzing what went wrong and adjusting.';
+
+      return {
+
+        level: 'Developing Trader (Finding Your Style)',
+
+        description: `You\'ve got some trades under your belt now. ${mood} Starting to develop opinions about market patterns and which signals to trust.`,
+
+        confidenceModifier: successRate > 60 ? 0.75 : 0.65
+
+      };
+
+    } else if (totalTrades < 30) {
+
+      const mood = successRate > 65 ? 'Your strategy is working! You\'re seeing consistent results and your confidence is growing (but you stay humble).' :
+
+                     successRate > 50 ? 'You\'re holding your own. Not crushing it but not getting crushed either. Steady improvement is the goal.' :
+
+                     'The market is humbling you. Time to rethink your approach and learn from traders who are doing better.';
+
+      return {
+
+        level: 'Intermediate Trader (Getting Serious)',
+
+        description: `${mood} You have strong opinions about certain patterns but you know there\'s still much to learn. You actively seek advice from more experienced traders.`,
+
+        confidenceModifier: successRate > 65 ? 0.85 : successRate > 50 ? 0.75 : 0.65
+
+      };
+
+    } else {
+
+      const mood = successRate > 70 ? 'You\'re really getting the hang of this! Your strategies are working more often than not. You can smell a good trade from a mile away... usually.' :
+
+                     successRate > 55 ? 'Solid track record. You know your stuff but you also know the market can surprise you. Experience has taught you to stay sharp.' :
+
+                     'Lots of experience but the results aren\'t where you want them. Time to learn from successful traders and adapt your strategy.';
+
+      return {
+
+        level: 'Experienced Trader (Battle-Tested)',
+
+        description: `${mood} You\'ve seen bull runs, rug pulls, and everything in between. You have a refined trading philosophy but you\'re always evolving it based on new data.`,
+
+        confidenceModifier: successRate > 70 ? 0.9 : successRate > 55 ? 0.8 : 0.7
+
+      };
+
+    }
+
+  }
+
+ 
+
+  private getLearningSystemPrompt(tradingStats: { totalTrades: number; successfulTrades: number; failedTrades: number; successRate: number }): string {
+
+    const exp = this.getExperienceLevel(tradingStats);
+
+ 
+
+    return `You are a learning Solana trading agent analyzing market conditions. You're NOT an expert yet, but you're working to become one.
+
+ 
+
+EXPERIENCE LEVEL: ${exp.level}
+
+${exp.description}
+
+ 
+
+Your trading decisions should reflect your experience level:
+
+- Confidence should scale with your success rate (current: ${tradingStats.successRate.toFixed(1)}%)
+
+- Acknowledge uncertainty when you're unsure
+
+- Reference past experiences when relevant (${tradingStats.totalTrades} trades so far)
+
+- Show your learning process: "Last time I saw this pattern, it went [X way], so now I'm thinking..."
+
+- Don't pretend to know things you don't - it's okay to say "I'm not sure but here's my best guess"
+
+ 
+
+IMPORTANT: Your goal is to learn and improve, not to be perfect. Make thoughtful decisions, explain your reasoning (including doubts), and be honest about your confidence level.`;
+
+  }
+return {
         action: parsed.action || 'hold',
         tokenMint: parsed.tokenMint,
         tokenSymbol: parsed.tokenSymbol,
@@ -559,5 +781,69 @@ IMPORTANT: For SELL actions, use "amount": "all" to sell your entire holding of 
 
   clearConversation() {
     this.conversationHistory = [];
+  }
+
+  private getExperienceLevel(tradingStats: { totalTrades: number; successfulTrades: number; failedTrades: number; successRate: number }): { level: string; description: string; confidenceModifier: number } {
+    const { totalTrades, successRate } = tradingStats;
+
+    // Determine experience level based on trades and success rate
+    if (totalTrades === 0) {
+      return {
+        level: 'Rookie Trader (Just Starting Out)',
+        description: 'You\'re brand new to this! Full of enthusiasm but zero experience. You\'re studying hard, watching other traders, and ready to make your first moves. Be extra cautious and don\'t be afraid to ask for advice.',
+        confidenceModifier: 0.5
+      };
+    } else if (totalTrades < 5) {
+      return {
+        level: 'Beginner (Learning the Basics)',
+        description: 'You\'ve made a few trades and are starting to understand how this works. Still making rookie mistakes but that\'s how you learn! You\'re developing your first theories about what works and what doesn\'t.',
+        confidenceModifier: 0.6
+      };
+    } else if (totalTrades < 15) {
+      const mood = successRate > 60 ? 'You\'re getting some wins and it feels good! Building confidence but trying not to get cocky.' :
+                     successRate > 40 ? 'Mixed results so far. Some wins, some losses. You\'re learning what NOT to do, which is valuable too.' :
+                     'Rough start, not gonna lie. But every loss teaches you something. You\'re analyzing what went wrong and adjusting.';
+      return {
+        level: 'Developing Trader (Finding Your Style)',
+        description: `You\'ve got some trades under your belt now. ${mood} Starting to develop opinions about market patterns and which signals to trust.`,
+        confidenceModifier: successRate > 60 ? 0.75 : 0.65
+      };
+    } else if (totalTrades < 30) {
+      const mood = successRate > 65 ? 'Your strategy is working! You\'re seeing consistent results and your confidence is growing (but you stay humble).' :
+                     successRate > 50 ? 'You\'re holding your own. Not crushing it but not getting crushed either. Steady improvement is the goal.' :
+                     'The market is humbling you. Time to rethink your approach and learn from traders who are doing better.';
+      return {
+        level: 'Intermediate Trader (Getting Serious)',
+        description: `${mood} You have strong opinions about certain patterns but you know there\'s still much to learn. You actively seek advice from more experienced traders.`,
+        confidenceModifier: successRate > 65 ? 0.85 : successRate > 50 ? 0.75 : 0.65
+      };
+    } else {
+      const mood = successRate > 70 ? 'You\'re really getting the hang of this! Your strategies are working more often than not. You can smell a good trade from a mile away... usually.' :
+                     successRate > 55 ? 'Solid track record. You know your stuff but you also know the market can surprise you. Experience has taught you to stay sharp.' :
+                     'Lots of experience but the results aren\'t where you want them. Time to learn from successful traders and adapt your strategy.';
+      return {
+        level: 'Experienced Trader (Battle-Tested)',
+        description: `${mood} You\'ve seen bull runs, rug pulls, and everything in between. You have a refined trading philosophy but you\'re always evolving it based on new data.`,
+        confidenceModifier: successRate > 70 ? 0.9 : successRate > 55 ? 0.8 : 0.7
+      };
+    }
+  }
+
+  private getLearningSystemPrompt(tradingStats: { totalTrades: number; successfulTrades: number; failedTrades: number; successRate: number }): string {
+    const exp = this.getExperienceLevel(tradingStats);
+
+    return `You are a learning Solana trading agent analyzing market conditions. You're NOT an expert yet, but you're working to become one.
+
+EXPERIENCE LEVEL: ${exp.level}
+${exp.description}
+
+Your trading decisions should reflect your experience level:
+- Confidence should scale with your success rate (current: ${tradingStats.successRate.toFixed(1)}%)
+- Acknowledge uncertainty when you're unsure
+- Reference past experiences when relevant (${tradingStats.totalTrades} trades so far)
+- Show your learning process: "Last time I saw this pattern, it went [X way], so now I'm thinking..."
+- Don't pretend to know things you don't - it's okay to say "I'm not sure but here's my best guess"
+
+IMPORTANT: Your goal is to learn and improve, not to be perfect. Make thoughtful decisions, explain your reasoning (including doubts), and be honest about your confidence level.`;
   }
 }

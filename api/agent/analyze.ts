@@ -27,6 +27,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const anthropicKey = process.env.ANTHROPIC_API_KEY;
     const mem0Key = process.env.MEM0_API_KEY;
     const jupiterApiKey = process.env.JUPITER_API_KEY;
+    const birdeyeApiKey = process.env.BIRDEYE_API_KEY;
 
     // Better error messages for debugging
     if (!privateKey) {
@@ -37,6 +38,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     if (!mem0Key) {
       return res.status(500).json({ error: 'Missing MEM0_API_KEY environment variable' });
+    }
+    if (!birdeyeApiKey) {
+      return res.status(500).json({ error: 'Missing BIRDEYE_API_KEY environment variable' });
     }
 
     console.log('✅ All environment variables present');
@@ -59,7 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       riskTolerance: (process.env.RISK_TOLERANCE as any) || 'moderate',
     };
 
-    const agent = new TradingAgent(anthropicKey, wallet, pumpFun, agentConfig, memory);
+    const agent = new TradingAgent(anthropicKey, wallet, pumpFun, agentConfig, memory, birdeyeApiKey);
     console.log('✅ Trading agent initialized');
     console.log('🤖 Starting market analysis...');
 

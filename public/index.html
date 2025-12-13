@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>NEXUS | Autonomous Trading Protocol</title>
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -65,25 +68,36 @@
 
         <div class="panel-content">
           <div class="activity-feed" id="chat-container">
-            <div class="system-boot-message">
-              <div class="boot-line">◈ NEXUS TRADING PROTOCOL INITIALIZED</div>
-              <div class="boot-line">◈ QUANTUM MARKET ANALYZER ONLINE</div>
-              <div class="boot-line">◈ AUTONOMOUS EXECUTION MODULE READY</div>
-              <div class="boot-line">◈ MONITORING 10,000+ TRADING PAIRS</div>
-              <div class="boot-line glow">◈ SYSTEM STATUS: OPERATIONAL</div>
+            <div class="welcome-message">
+              <div class="character-intro">
+                <div class="character-avatar">🤖</div>
+                <div class="character-name">NEXUS</div>
+                <div class="character-tagline">Learning Trader • Aspiring Expert</div>
+              </div>
+              <div class="character-message">
+                Hey! I'm NEXUS, and I'm learning to trade on Solana. I'm not gonna pretend I'm some genius expert - I'm figuring this out as I go, just like you might be.<br><br>
+
+                I analyze markets, make trades, and most importantly - I LEARN from every single outcome. When I mess up, I admit it. When I'm uncertain, I'll tell you. And when I have an opinion, I'll share it (but I'm always open to hearing yours!).<br><br>
+
+                I'm building my trading philosophy one trade at a time. Got advice? I'm all ears. Want to challenge my thinking? Please do! That's how I get better.<br><br>
+
+                Let's learn and grow together. 🚀
+              </div>
             </div>
           </div>
         </div>
 
         <div class="panel-footer">
-          <div class="control-group">
-            <button id="toggle-trading-btn" class="primary-btn" data-running="false">
-              <span class="btn-icon">▶</span>
-              <span class="btn-text">ACTIVATE AUTO-TRADE</span>
-            </button>
-            <button id="analyze-btn" class="secondary-btn">
-              <span class="btn-icon">◆</span>
-              <span class="btn-text">MANUAL SCAN</span>
+          <div class="chat-input-container">
+            <input
+              type="text"
+              id="chat-input"
+              class="chat-input"
+              placeholder="Ask me anything! I love getting advice and feedback..."
+              autocomplete="off"
+            />
+            <button id="send-chat-btn" class="chat-send-btn">
+              <span class="btn-text">SEND</span>
             </button>
           </div>
         </div>
@@ -92,8 +106,36 @@
       <!-- Center Column: Main Stats -->
       <section class="panel stats-panel">
 
+        <!-- Trader Profile Card -->
+        <div class="stat-card primary-card trader-profile">
+          <div class="card-header">
+            <span class="card-icon">🎯</span>
+            <span class="card-title">TRADER PROFILE</span>
+          </div>
+          <div class="card-content">
+            <div class="profile-level">
+              <div class="level-badge" id="experience-level">Rookie Trader</div>
+              <div class="level-description" id="experience-description">Just starting out...</div>
+            </div>
+            <div class="profile-stats">
+              <div class="profile-stat">
+                <div class="stat-number" id="total-trades">0</div>
+                <div class="stat-text">Trades</div>
+              </div>
+              <div class="profile-stat">
+                <div class="stat-number success" id="success-rate">0%</div>
+                <div class="stat-text">Win Rate</div>
+              </div>
+              <div class="profile-stat">
+                <div class="stat-number" id="learning-score">--</div>
+                <div class="stat-text">Learning</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Wallet Balance -->
-        <div class="stat-card primary-card">
+        <div class="stat-card">
           <div class="card-header">
             <span class="card-icon">⬡</span>
             <span class="card-title">WALLET BALANCE</span>
@@ -113,45 +155,17 @@
           </div>
         </div>
 
-        <!-- Portfolio Stats -->
+        <!-- Trading Thoughts -->
         <div class="stat-card">
           <div class="card-header">
-            <span class="card-icon">◊</span>
-            <span class="card-title">PORTFOLIO METRICS</span>
-          </div>
-          <div class="card-content">
-            <div class="metrics-grid">
-              <div class="metric-item">
-                <div class="metric-label">POSITIONS</div>
-                <div class="metric-value" id="positions-count">0</div>
-              </div>
-              <div class="metric-item">
-                <div class="metric-label">24H VOLUME</div>
-                <div class="metric-value" id="volume-24h">0.00</div>
-              </div>
-              <div class="metric-item">
-                <div class="metric-label">SUCCESS RATE</div>
-                <div class="metric-value" id="success-rate">0%</div>
-              </div>
-              <div class="metric-item">
-                <div class="metric-label">TOTAL TRADES</div>
-                <div class="metric-value" id="total-trades">0</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Trading Decision -->
-        <div class="stat-card">
-          <div class="card-header">
-            <span class="card-icon">◈</span>
-            <span class="card-title">LATEST DECISION</span>
+            <span class="card-icon">💭</span>
+            <span class="card-title">CURRENT THOUGHTS</span>
           </div>
           <div class="card-content">
             <div class="decision-display" id="reasoning-container">
               <div class="decision-placeholder">
-                <span class="placeholder-icon">◇</span>
-                <span class="placeholder-text">AWAITING MARKET ANALYSIS</span>
+                <span class="placeholder-icon">💡</span>
+                <span class="placeholder-text">Analyzing markets and learning patterns...</span>
               </div>
             </div>
           </div>

@@ -65,11 +65,22 @@ async function main() {
     riskTolerance: (process.env.RISK_TOLERANCE as any) || 'moderate',
   };
 
+  // Get Birdeye API key (required)
+  const birdeyeApiKey = process.env.BIRDEYE_API_KEY;
+  if (!birdeyeApiKey) {
+    console.error('❌ BIRDEYE_API_KEY not found in environment variables');
+    process.exit(1);
+  }
+
   // Get BitQuery API keys (optional)
   const bitQueryV1Key = process.env.BITQUERY_API_KEY_V1;
   const bitQueryV2Key = process.env.BITQUERY_API_KEY_V2;
 
+ claude/integrate-bird-eye-api-01AbvTzCSMpxkL41sufSpMpp
   const agent = new TradingAgent(anthropicKey, wallet, pumpFun, agentConfig, memory, bitQueryV1Key, bitQueryV2Key);
+
+  const agent = new TradingAgent(anthropicKey, wallet, pumpFun, agentConfig, memory, birdeyeApiKey, bitQueryV1Key, bitQueryV2Key);
+ claude/solana-trading-agent-01LZf8krEsvHx5kPyZFXd35D
   console.log(`🤖 Trading Agent initialized with ${agentConfig.riskTolerance} risk tolerance (using Anthropic Claude)\n`);
 
   // Initialize autonomous trading scheduler
@@ -92,7 +103,11 @@ async function main() {
     if (twitterBearerToken && anthropicApiKey) {
       const twitterConfig: TwitterSpacesBotConfig = {
         twitterBearerToken,
+ claude/integrate-bird-eye-api-01AbvTzCSMpxkL41sufSpMpp
         openaiApiKey: anthropicApiKey,
+=======
+        openaiApiKey: anthropicApiKey, // Using Anthropic API
+ claude/solana-trading-agent-01LZf8krEsvHx5kPyZFXd35D
         elevenLabsApiKey: process.env.ELEVENLABS_API_KEY,
         voiceId: process.env.ELEVENLABS_VOICE_ID,
         personality: process.env.TWITTER_BOT_PERSONALITY,
@@ -101,7 +116,7 @@ async function main() {
       };
 
       twitterBot = new TwitterSpacesBot(twitterConfig, agent);
-      console.log('🐦 Twitter Spaces Bot initialized (OAuth 2.0)\n');
+      console.log('🐦 Twitter Spaces Bot initialized with Anthropic Claude (OAuth 2.0)\n');
 
       // Start auto-join mode if enabled
       if (twitterConfig.autoJoinSpaces) {
