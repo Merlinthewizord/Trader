@@ -65,7 +65,7 @@ html, body {
   font-family: 'Anton', sans-serif;
   background:
     linear-gradient(rgba(28, 30, 63, 0.85), rgba(28, 30, 63, 0.85)),
-    url('https://images.unsplash.com/photo-1484681096355-7cfabe071abd?w=1920&q=80') center/cover fixed;
+    url('american-flag.jpg') center/cover fixed;
   color: var(--text-freedom);
   position: relative;
 }
