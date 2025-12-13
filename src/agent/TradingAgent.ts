@@ -5,6 +5,7 @@ import { MemoryService } from '../memory/MemoryService';
 import { KnowledgeBase } from '../knowledge/KnowledgeBase';
 import { DexScreenerClient, DexPair } from '../trading/DexScreenerClient';
 import { BitQueryClient, TokenAnalytics } from '../trading/BitQueryClient';
+import { LimitOrderManager } from '../trading/LimitOrderManager';
 
 export interface PortfolioPosition {
   mint: string;
@@ -42,6 +43,7 @@ export class TradingAgent {
   private knowledgeBase: KnowledgeBase;
   private dexScreener: DexScreenerClient;
   private bitQuery?: BitQueryClient;
+  private limitOrderManager?: LimitOrderManager;
   private conversationHistory: { role: 'user' | 'assistant'; content: string }[] = [];
 
   constructor(
@@ -50,6 +52,7 @@ export class TradingAgent {
     pumpFun: PumpFunClient,
     config: AgentConfig,
     memory: MemoryService,
+    limitOrderManager?: LimitOrderManager,
     bitQueryV1Key?: string,
     bitQueryV2Key?: string
   ) {
@@ -60,6 +63,7 @@ export class TradingAgent {
     this.pumpFun = pumpFun;
     this.config = config;
     this.memory = memory;
+    this.limitOrderManager = limitOrderManager;
     this.knowledgeBase = new KnowledgeBase();
     this.dexScreener = new DexScreenerClient();
 
@@ -67,6 +71,11 @@ export class TradingAgent {
     if (bitQueryV1Key && bitQueryV2Key) {
       this.bitQuery = new BitQueryClient(bitQueryV1Key, bitQueryV2Key);
       console.log('🔍 BitQuery analytics enabled');
+    }
+
+    // Log limit order status
+    if (this.limitOrderManager) {
+      console.log('🎯 Limit orders enabled');
     }
   }
 
@@ -335,6 +344,40 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
               denominatedInSol: sellAllTokens ? false : true, // If selling all tokens, specify in tokens not SOL
               slippage: this.config.slippageBPS,
             });
+
+      // Create limit orders after successful BUY
+      if (decision.action === 'buy' && this.limitOrderManager && decision.tokenMint && decision.tokenSymbol) {
+        try {
+          // Wait a moment for the transaction to settle
+          await new Promise(resolve => setTimeout(resolve, 3000));
+
+          // Get current token balance to know how many tokens were bought
+          const tokenBalance = await this.wallet.getTokenBalance(decision.tokenMint);
+
+          if (tokenBalance > 0) {
+            // Get token info for entry price
+            const tokenInfo = await this.pumpFun.getTokenInfo(decision.tokenMint);
+            const entryPrice = tokenInfo?.usdPrice || 0;
+
+            if (entryPrice > 0) {
+              await this.limitOrderManager.createLimitOrders(
+                decision.tokenMint,
+                decision.tokenSymbol,
+                entryPrice,
+                tokenBalance,
+                signature
+              );
+            } else {
+              console.log('⚠️  Could not get entry price, skipping limit orders');
+            }
+          } else {
+            console.log('⚠️  No tokens in balance after buy, skipping limit orders');
+          }
+        } catch (error: any) {
+          console.error('⚠️  Failed to create limit orders:', error.message);
+          // Don't throw - limit order creation failure shouldn't fail the trade
+        }
+      }
 
       // Log successful trade execution to memory
       await this.memory.logTrade(decision, signature);
