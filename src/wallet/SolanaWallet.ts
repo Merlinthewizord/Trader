@@ -87,6 +87,9 @@ export class SolanaWallet {
 
       for (const sig of signatures) {
         try {
+          // Add small delay between RPC calls to avoid rate limits
+          await new Promise(resolve => setTimeout(resolve, 200));
+
           const tx = await this.connection.getParsedTransaction(sig.signature, {
             maxSupportedTransactionVersion: 0
           });
