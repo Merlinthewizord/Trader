@@ -46,14 +46,10 @@ export class TwitterSpacesBot {
     console.log(`🔑 Initializing Twitter API with Bearer Token (${config.twitterBearerToken.substring(0, 20)}...)`);
     this.twitterClient = new TwitterApi(config.twitterBearerToken);
 
-    // Initialize OpenAI client (using OpenRouter for chat, regular OpenAI for audio)
+    // Initialize OpenAI client (using Anthropic API for chat)
     this.openai = new OpenAI({
       apiKey: config.openaiApiKey,
-      baseURL: 'https://openrouter.ai/api/v1',
-      defaultHeaders: {
-        'HTTP-Referer': 'https://github.com/Merlinthewizord/Trader',
-        'X-Title': 'Twitter Spaces Bot'
-      }
+      baseURL: 'https://api.anthropic.com/v1',
     });
 
     // Initialize ElevenLabs if API key provided
@@ -290,7 +286,7 @@ export class TwitterSpacesBot {
       const recentHistory = this.conversationHistory.slice(-10);
 
       const completion = await this.openai.chat.completions.create({
-        model: 'gpt-oss-20b',
+        model: 'claude-3-5-sonnet-20241022',
         messages: [
           { role: 'system', content: systemPrompt },
           ...recentHistory,
