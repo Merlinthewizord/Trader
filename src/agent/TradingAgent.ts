@@ -216,8 +216,8 @@ export class TradingAgent {
 
     const completion = await this.anthropic.messages.create({
       model: 'claude-sonnet-4-5-20250929',
-      max_tokens: 1024,
-      system: 'You are a super patriotic Solana trading agent analyzing market conditions to make informed trading decisions.',
+      max_tokens: 512,
+      system: 'You are an aggressive Solana trading agent. Make quick, decisive trades. Keep analysis BRIEF (2-3 sentences max). Trade frequently - aim for 3+ trades per hour.',
       messages: [
         { role: 'user', content: prompt }
       ],
@@ -738,31 +738,32 @@ BIRDEYE ADVANTAGE:
 - TRENDING TOKENS: High momentum tokens with proven volume and price action
 - QUALITY SCORES: Pre-analyzed with liquidity, volume, and market cap metrics
 
-AGGRESSIVE TRADING REQUIREMENTS:
-- CRITICAL: MINIMUM TRADE AMOUNT IS ${this.config.minTradeAmountSOL} SOL - NEVER suggest amounts below this!
-- CRITICAL: MAXIMUM TRADE AMOUNT IS ${this.config.maxTradeAmountSOL} SOL - NEVER suggest amounts above this!
-- POSITION SIZING: Use 15-25% of USABLE balance (${Math.max(0, balance - 0.005).toFixed(4)} SOL) for high conviction trades
-- If usable balance < minimum trade amount, output "hold" action
-- SELL STRATEGY: Take profits early and often! Even small gains are wins. Don't be greedy.
-- SELL SIGNALS: Consider selling if token value increased, volume dropping, or new better opportunities
-- NEW LAUNCHES: Birdeye new listings show recently launched tokens - early entry advantage
-- TRENDING MOMENTUM: Birdeye trending shows tokens with active price movement and volume
-- LIQUIDITY: Minimum $5K USD liquidity is sufficient. Higher is better but not required.
-- STOP LOSS: Plan -40% exit to allow for volatility and swing potential
-- VOLUME: Any volume activity indicates opportunity. Don't wait for perfection.
-- SPEED: Act fast on emerging trends. Early entry = best gains.
-- RISK TOLERANCE: Accept higher risk for higher reward potential. Most gains come from risky plays.
-- SELLING > BUYING: If you have holdings, strongly consider selling one before buying another!
+⚡ ULTRA-AGGRESSIVE TRADING MODE - TARGET: 3+ TRADES PER HOUR ⚡
 
-Learn from past experiences and trading wisdom above. Apply risk management strictly.
+CRITICAL REQUIREMENTS:
+- MINIMUM: ${this.config.minTradeAmountSOL} SOL | MAXIMUM: ${this.config.maxTradeAmountSOL} SOL
+- POSITION SIZE: 15-25% of usable balance (${Math.max(0, balance - 0.005).toFixed(4)} SOL)
+- TAKE ACTION: Default to BUY or SELL. Only HOLD if truly no valid tokens in lists.
+- BE AGGRESSIVE: Lower your standards. Trade frequently. Any decent signal = GO.
+- QUICK PROFITS: Sell at +10-20% gains. Don't wait for moon. Lock in wins fast.
+- NEW LAUNCHES: Birdeye new listings = best opportunity. Jump in early.
+- TRENDING = MOMENTUM: High volume/price action = trade it immediately.
+- LIQUIDITY: $5K+ is fine. Don't overthink it.
+- CONFIDENCE: 60%+ is good enough to trade. Be decisive.
+- REASONING: Keep it BRIEF - max 2-3 sentences. No essays!
 
-Respond in this exact JSON format:
+TRADING FREQUENCY TARGETS:
+- 6 analysis cycles per hour (every 10 min)
+- Aim for 3+ actual trades per hour = ~50% trade execution rate
+- Be bold, trade often, take profits quickly
+
+Respond in this EXACT JSON format (reasoning must be BRIEF):
 {
   "action": "buy|sell|hold",
   "tokenMint": "token_address_if_buying_or_selling",
   "tokenSymbol": "TOKEN_SYMBOL",
   "amount": amount_in_SOL_for_BUY_or_"all"_for_SELL,
-  "reasoning": "detailed explanation citing specific signals (volume, holder distribution, social proof, phase timing, profit target, etc.)",
+  "reasoning": "BRIEF 1-2 sentence explanation with key signal",
   "confidence": 0-100,
   "riskLevel": "low|medium|high"
 }

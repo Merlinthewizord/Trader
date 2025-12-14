@@ -90,8 +90,8 @@ async function main() {
   const schedulerConfig: TradingSchedulerConfig = {
     intervalMinutes: parseFloat(process.env.TRADING_INTERVAL_MINUTES || '10'),
     autoExecute: process.env.AUTO_EXECUTE_TRADES === 'true',
-    minConfidenceForAutoTrade: parseInt(process.env.MIN_CONFIDENCE_FOR_AUTO_TRADE || '70'),
-    minConfidenceForHighRisk: parseInt(process.env.MIN_CONFIDENCE_FOR_HIGH_RISK || '80'),
+    minConfidenceForAutoTrade: parseInt(process.env.MIN_CONFIDENCE_FOR_AUTO_TRADE || '60'),
+    minConfidenceForHighRisk: parseInt(process.env.MIN_CONFIDENCE_FOR_HIGH_RISK || '65'),
     enabled: process.env.AUTONOMOUS_TRADING_ENABLED !== 'true', // Enabled by default
   };
 
@@ -107,12 +107,15 @@ async function main() {
   // Start autonomous trading if enabled
   if (schedulerConfig.enabled) {
     scheduler.start();
-    console.log('✅ PATRIOT WORKFLOW ACTIVE:');
-    console.log('   Every 10 minutes:');
+    console.log('✅ PATRIOT ULTRA-AGGRESSIVE MODE ACTIVE:');
+    console.log('   ⚡ Cycle Frequency: Every 10 minutes (6 per hour)');
+    console.log('   🎯 Trade Target: 3+ trades per hour (~50% execution rate)');
+    console.log('   📊 Min Confidence: 60% (normal) | 65% (high-risk)');
+    console.log('   \n   Workflow per cycle:');
     console.log('   1. Check portfolio positions vs stop loss/take profit');
-    console.log('   2. Scan market for opportunities');
-    console.log('   3. Decide to BUY, SELL, or HOLD');
-    console.log('   4. Execute trade if confidence threshold met\n');
+    console.log('   2. Scan Birdeye for new & trending tokens');
+    console.log('   3. Make aggressive BUY/SELL decision (brief analysis)');
+    console.log('   4. Execute immediately if confidence >= threshold\n');
   } else {
     console.log('⏸️  Autonomous trading is DISABLED (set AUTONOMOUS_TRADING_ENABLED=true to enable)\n');
   }
