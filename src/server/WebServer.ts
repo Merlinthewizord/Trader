@@ -240,7 +240,7 @@ export class WebServer {
       await this.storage.addAutonomousEvent(
         event.type,
         event.data,
-        event.message || `Autonomous ${event.type} event`
+        `Autonomous ${event.type} event`
       );
 
       this.broadcast({
