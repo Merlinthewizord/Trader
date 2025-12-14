@@ -59,6 +59,11 @@ export class WebServer {
         const address = this.wallet.getAddress();
         const solPrice = await this.getSolPrice();
         const balanceUSD = balance * solPrice;
+
+        // Persist wallet snapshot and SOL price
+        await this.storage.addWalletSnapshot(balance, balanceUSD);
+        await this.storage.addPriceSnapshot('SOL', solPrice);
+
         res.json({ balance, address, solPrice, balanceUSD });
       } catch (error: any) {
         res.status(500).json({ error: error.message });
@@ -133,7 +138,15 @@ export class WebServer {
     this.app.post('/api/agent/chat', async (req: Request, res: Response) => {
       try {
         const { message } = req.body;
+
+        // Persist user message
+        await this.storage.addChatMessage('user', message);
+
         const response = await this.agent.chat(message);
+
+        // Persist assistant response
+        await this.storage.addChatMessage('assistant', response);
+
         res.json({ response });
       } catch (error: any) {
         res.status(500).json({ error: error.message });
@@ -223,6 +236,13 @@ export class WebServer {
         await this.storage.addDecision(event.data, true, event.data.signature);
       }
 
+      // Persist autonomous event for full replicability
+      await this.storage.addAutonomousEvent(
+        event.type,
+        event.data,
+        event.message || `Autonomous ${event.type} event`
+      );
+
       this.broadcast({
         type: 'autonomous_event',
         data: event,
@@ -270,7 +290,14 @@ export class WebServer {
   private async handleClientMessage(ws: WebSocket, message: ClientMessage) {
     switch (message.type) {
       case 'chat':
+        // Persist user message
+        await this.storage.addChatMessage('user', message.data.message);
+
         const chatResponse = await this.agent.chat(message.data.message);
+
+        // Persist assistant response
+        await this.storage.addChatMessage('assistant', chatResponse);
+
         this.sendToClient(ws, {
           type: 'chat_response',
           data: { message: chatResponse },
@@ -318,6 +345,10 @@ export class WebServer {
     const transactions = await this.wallet.getRecentTransactions(2);
     const solPrice = await this.getSolPrice();
     const balanceUSD = balance * solPrice;
+
+    // Persist wallet snapshot and SOL price
+    await this.storage.addWalletSnapshot(balance, balanceUSD);
+    await this.storage.addPriceSnapshot('SOL', solPrice);
 
     this.sendToClient(ws, {
       type: 'wallet_update',

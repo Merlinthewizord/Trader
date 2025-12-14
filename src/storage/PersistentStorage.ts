@@ -21,9 +21,50 @@ export interface StoredTransaction {
   blockTime?: number;
 }
 
+export interface WalletSnapshot {
+  timestamp: string;
+  balance: number;
+  usdValue?: number;
+}
+
+export interface PortfolioSnapshot {
+  timestamp: string;
+  tokens: Array<{
+    mint: string;
+    symbol: string;
+    balance: number;
+    usdValue?: number;
+    price?: number;
+  }>;
+}
+
+export interface ChatMessage {
+  timestamp: string;
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface PriceSnapshot {
+  timestamp: string;
+  asset: string;
+  price: number;
+}
+
+export interface AutonomousEvent {
+  timestamp: string;
+  type: string;
+  data: any;
+  description?: string;
+}
+
 export interface PersistentData {
   decisions: StoredDecision[];
   transactions: StoredTransaction[];
+  walletSnapshots: WalletSnapshot[];
+  portfolioHistory: PortfolioSnapshot[];
+  chatHistory: ChatMessage[];
+  priceHistory: PriceSnapshot[];
+  autonomousEvents: AutonomousEvent[];
   lastUpdated: string;
 }
 
@@ -37,6 +78,11 @@ export class PersistentStorage {
     this.data = {
       decisions: [],
       transactions: [],
+      walletSnapshots: [],
+      portfolioHistory: [],
+      chatHistory: [],
+      priceHistory: [],
+      autonomousEvents: [],
       lastUpdated: new Date().toISOString(),
     };
   }
@@ -51,7 +97,7 @@ export class PersistentStorage {
       try {
         const fileContent = await fs.readFile(this.dataPath, 'utf-8');
         this.data = JSON.parse(fileContent);
-        console.log(`✅ Loaded persistent data: ${this.data.decisions.length} decisions, ${this.data.transactions.length} transactions`);
+        console.log(`✅ Loaded persistent data: ${this.data.decisions.length} decisions, ${this.data.transactions.length} transactions, ${this.data.walletSnapshots?.length || 0} wallet snapshots, ${this.data.chatHistory?.length || 0} chat messages`);
       } catch (error) {
         // File doesn't exist yet, use default empty data
         console.log('📝 No existing persistent data found, starting fresh');
@@ -129,6 +175,124 @@ export class PersistentStorage {
 
   getAllData(): PersistentData {
     return { ...this.data };
+  }
+
+  async addWalletSnapshot(balance: number, usdValue?: number) {
+    const snapshot: WalletSnapshot = {
+      timestamp: new Date().toISOString(),
+      balance,
+      usdValue,
+    };
+
+    this.data.walletSnapshots.unshift(snapshot);
+
+    // Keep only last 100 wallet snapshots
+    if (this.data.walletSnapshots.length > 100) {
+      this.data.walletSnapshots = this.data.walletSnapshots.slice(0, 100);
+    }
+
+    this.data.lastUpdated = new Date().toISOString();
+    await this.debouncedSave();
+  }
+
+  async addPortfolioSnapshot(tokens: Array<{
+    mint: string;
+    symbol: string;
+    balance: number;
+    usdValue?: number;
+    price?: number;
+  }>) {
+    const snapshot: PortfolioSnapshot = {
+      timestamp: new Date().toISOString(),
+      tokens,
+    };
+
+    this.data.portfolioHistory.unshift(snapshot);
+
+    // Keep only last 50 portfolio snapshots
+    if (this.data.portfolioHistory.length > 50) {
+      this.data.portfolioHistory = this.data.portfolioHistory.slice(0, 50);
+    }
+
+    this.data.lastUpdated = new Date().toISOString();
+    await this.debouncedSave();
+  }
+
+  async addChatMessage(role: 'user' | 'assistant', content: string) {
+    const message: ChatMessage = {
+      timestamp: new Date().toISOString(),
+      role,
+      content,
+    };
+
+    this.data.chatHistory.push(message);
+
+    // Keep only last 100 chat messages
+    if (this.data.chatHistory.length > 100) {
+      this.data.chatHistory = this.data.chatHistory.slice(-100);
+    }
+
+    this.data.lastUpdated = new Date().toISOString();
+    await this.debouncedSave();
+  }
+
+  async addPriceSnapshot(asset: string, price: number) {
+    const snapshot: PriceSnapshot = {
+      timestamp: new Date().toISOString(),
+      asset,
+      price,
+    };
+
+    this.data.priceHistory.unshift(snapshot);
+
+    // Keep only last 200 price snapshots (allows tracking multiple assets)
+    if (this.data.priceHistory.length > 200) {
+      this.data.priceHistory = this.data.priceHistory.slice(0, 200);
+    }
+
+    this.data.lastUpdated = new Date().toISOString();
+    await this.debouncedSave();
+  }
+
+  async addAutonomousEvent(type: string, data: any, description?: string) {
+    const event: AutonomousEvent = {
+      timestamp: new Date().toISOString(),
+      type,
+      data,
+      description,
+    };
+
+    this.data.autonomousEvents.unshift(event);
+
+    // Keep only last 100 autonomous events
+    if (this.data.autonomousEvents.length > 100) {
+      this.data.autonomousEvents = this.data.autonomousEvents.slice(0, 100);
+    }
+
+    this.data.lastUpdated = new Date().toISOString();
+    await this.debouncedSave();
+  }
+
+  getRecentWalletSnapshots(limit: number = 20): WalletSnapshot[] {
+    return this.data.walletSnapshots.slice(0, limit);
+  }
+
+  getRecentPortfolioSnapshots(limit: number = 10): PortfolioSnapshot[] {
+    return this.data.portfolioHistory.slice(0, limit);
+  }
+
+  getChatHistory(limit: number = 50): ChatMessage[] {
+    return this.data.chatHistory.slice(-limit);
+  }
+
+  getRecentPriceSnapshots(asset: string, limit: number = 50): PriceSnapshot[] {
+    return this.data.priceHistory
+      .filter(snapshot => snapshot.asset === asset)
+      .slice(0, limit);
+  }
+
+  getRecentAutonomousEvents(limit: number = 20): AutonomousEvent[] {
+    return this.data.autonomousEvents.slice(0, limit);
   }
 
   private async debouncedSave() {
