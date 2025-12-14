@@ -76,11 +76,14 @@ async function main() {
     riskTolerance: (process.env.RISK_TOLERANCE as any) || 'moderate',
   };
 
+  // Get Birdeye API key (recommended for market data)
+  const birdeyeApiKey = process.env.BIRDEYE_API_KEY;
+
   // Get BitQuery API keys (optional)
   const bitQueryV1Key = process.env.BITQUERY_API_KEY_V1;
   const bitQueryV2Key = process.env.BITQUERY_API_KEY_V2;
 
-  const agent = new TradingAgent(anthropicKey, wallet, pumpFun, agentConfig, memory, limitOrderManager, bitQueryV1Key, bitQueryV2Key);
+  const agent = new TradingAgent(anthropicKey, wallet, pumpFun, agentConfig, memory, limitOrderManager, birdeyeApiKey, bitQueryV1Key, bitQueryV2Key);
   console.log(`🤖 Trading Agent initialized with ${agentConfig.riskTolerance} risk tolerance (using Anthropic Claude)\n`);
 
   // Initialize autonomous trading scheduler

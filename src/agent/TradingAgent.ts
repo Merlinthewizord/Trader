@@ -3,6 +3,7 @@ import { SolanaWallet, TokenHolding } from '../wallet/SolanaWallet';
 import { PumpFunClient, TokenInfo } from '../trading/PumpFunClient';
 import { MemoryService } from '../memory/MemoryService';
 import { KnowledgeBase } from '../knowledge/KnowledgeBase';
+import { BirdeyeClient, BirdeyeToken } from '../trading/BirdeyeClient';
 import { DexScreenerClient, DexPair } from '../trading/DexScreenerClient';
 import { BitQueryClient, TokenAnalytics } from '../trading/BitQueryClient';
 import { LimitOrderManager } from '../trading/LimitOrderManager';
@@ -41,6 +42,7 @@ export class TradingAgent {
   private config: AgentConfig;
   private memory: MemoryService;
   private knowledgeBase: KnowledgeBase;
+  private birdeye?: BirdeyeClient;
   private dexScreener: DexScreenerClient;
   private bitQuery?: BitQueryClient;
   private limitOrderManager?: LimitOrderManager;
@@ -53,6 +55,7 @@ export class TradingAgent {
     config: AgentConfig,
     memory: MemoryService,
     limitOrderManager?: LimitOrderManager,
+    birdeyeApiKey?: string,
     bitQueryV1Key?: string,
     bitQueryV2Key?: string
   ) {
@@ -66,6 +69,12 @@ export class TradingAgent {
     this.limitOrderManager = limitOrderManager;
     this.knowledgeBase = new KnowledgeBase();
     this.dexScreener = new DexScreenerClient();
+
+    // Initialize Birdeye if key is provided
+    if (birdeyeApiKey) {
+      this.birdeye = new BirdeyeClient(birdeyeApiKey);
+      console.log('🦅 Birdeye API enabled');
+    }
 
     // Initialize BitQuery if keys are provided
     if (bitQueryV1Key && bitQueryV2Key) {
@@ -150,15 +159,24 @@ export class TradingAgent {
 
     const trendingTokens = await this.pumpFun.getTrendingTokens(10);
 
-    // Fetch new pairs from DexScreener (last 6 hours)
-    console.log('🔍 Fetching new Solana pairs from DexScreener...');
-    const newPairs = await this.dexScreener.getNewSolanaPairs(6);
-    const trendingPairs = await this.dexScreener.getTrendingPairs();
+    // Fetch new tokens and trending data from Birdeye (if available)
+    let newBirdeyeTokens: BirdeyeToken[] = [];
+    let trendingBirdeyeTokens: BirdeyeToken[] = [];
 
-    // Analyze pair quality
-    const pairAnalysis = newPairs.slice(0, 10).map((pair) => ({
-      pair,
-      quality: this.dexScreener.analyzePairQuality(pair),
+    if (this.birdeye) {
+      console.log('🦅 Fetching new token listings from Birdeye...');
+      newBirdeyeTokens = await this.birdeye.getNewTokens(20);
+
+      console.log('🔥 Fetching trending tokens from Birdeye...');
+      trendingBirdeyeTokens = await this.birdeye.getTrendingTokens(20);
+    } else {
+      console.log('⚠️  Birdeye API not configured - using pump.fun data only');
+    }
+
+    // Analyze token quality from Birdeye
+    const birdeyeAnalysis = newBirdeyeTokens.slice(0, 15).map((token) => ({
+      token,
+      quality: this.birdeye?.analyzeTokenQuality(token) || { score: 0, signals: [], warnings: [] },
     }));
 
     // Fetch BitQuery analytics for top tokens (if available)
@@ -187,7 +205,8 @@ export class TradingAgent {
     const prompt = this.buildMarketAnalysisPrompt(
       balance,
       trendingTokens,
-      pairAnalysis,
+      birdeyeAnalysis,
+      trendingBirdeyeTokens,
       tradingStats,
       recentMemories,
       bitQueryAnalytics,
@@ -551,7 +570,8 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
   private buildMarketAnalysisPrompt(
     balance: number,
     tokens: TokenInfo[],
-    pairAnalysis: Array<{ pair: DexPair; quality: { score: number; signals: string[]; warnings: string[] } }>,
+    birdeyeAnalysis: Array<{ token: BirdeyeToken; quality: { score: number; signals: string[]; warnings: string[] } }>,
+    trendingBirdeyeTokens: BirdeyeToken[],
     tradingStats: { totalTrades: number; successfulTrades: number; failedTrades: number; successRate: number },
     memories: string[],
     bitQueryAnalytics?: Map<string, TokenAnalytics>,
@@ -636,13 +656,12 @@ ${tokens.map((t, i) => {
    - Verified: ${t.isVerified ? 'Yes' : 'No'}${bitQueryInfo}`;
 }).join('\n\n')}
 
-NEW Solana Pairs from DexScreener (Last 6 Hours):
-${pairAnalysis.map((analysis, i) => {
-  const p = analysis.pair;
+🆕 NEW TOKEN LISTINGS FROM BIRDEYE (Recently Launched):
+${birdeyeAnalysis.length > 0 ? birdeyeAnalysis.map((analysis, i) => {
+  const t = analysis.token;
   const q = analysis.quality;
-  const ageHours = p.pairCreatedAt ? ((Date.now() - p.pairCreatedAt) / (1000 * 60 * 60)).toFixed(1) : 'N/A';
 
-  const analytics = bitQueryAnalytics?.get(p.baseToken.address);
+  const analytics = bitQueryAnalytics?.get(t.address);
   let bitQueryInfo = '';
   if (analytics) {
     bitQueryInfo = `
@@ -653,26 +672,47 @@ ${pairAnalysis.map((analysis, i) => {
    - Trade Count (24h): ${analytics.trades24h}`;
   }
 
-  return `${i + 1}. ${p.baseToken.symbol}/${p.quoteToken.symbol} (${p.dexId})
-   - Pair Address: ${p.pairAddress}
-   - Token Address: ${p.baseToken.address}
-   - Age: ${ageHours} hours
-   - Price: $${parseFloat(p.priceUsd || '0').toFixed(8)}
-   - Market Cap: $${p.marketCap?.toLocaleString() || 'N/A'}
-   - Liquidity: $${p.liquidity?.usd?.toLocaleString() || 'N/A'}
-   - 24h Volume: $${p.volume?.h24?.toLocaleString() || 'N/A'}
-   - 24h Change: ${p.priceChange?.h24?.toFixed(2) || 'N/A'}%
-   - 24h Txns: ${(p.txns?.h24?.buys || 0) + (p.txns?.h24?.sells || 0)} (${p.txns?.h24?.buys || 0} buys, ${p.txns?.h24?.sells || 0} sells)
+  return `${i + 1}. ${t.symbol} (${t.name})
+   - Token Address: ${t.address}
+   - Price: $${t.price?.toFixed(8) || 'N/A'}
+   - Market Cap: $${t.mc?.toLocaleString() || 'N/A'}
+   - Liquidity: $${t.liquidity?.toLocaleString() || 'N/A'}
+   - 24h Volume: $${t.v24hUSD?.toLocaleString() || 'N/A'}
+   - 24h Change: ${t.priceChange24h?.toFixed(2) || 'N/A'}%
    - Quality Score: ${q.score}/100
    - Signals: ${q.signals.length > 0 ? q.signals.join(', ') : 'None'}
    - Warnings: ${q.warnings.length > 0 ? q.warnings.join(', ') : 'None'}${bitQueryInfo}`;
-}).join('\n\n')}
+}).join('\n\n') : 'No new tokens found'}
+
+🔥 TRENDING TOKENS FROM BIRDEYE (High Momentum):
+${trendingBirdeyeTokens.length > 0 ? trendingBirdeyeTokens.slice(0, 10).map((t, i) => {
+  const analytics = bitQueryAnalytics?.get(t.address);
+  let bitQueryInfo = '';
+  if (analytics) {
+    bitQueryInfo = `
+   📊 ON-CHAIN ANALYTICS (BitQuery):
+   - Holder Concentration: ${analytics.holderConcentration.toFixed(1)}% (top 10 holders)
+   - Unique Traders (24h): ${analytics.uniqueTraders24h}
+   - On-chain Volume (24h): $${analytics.volume24h.toLocaleString()}
+   - Trade Count (24h): ${analytics.trades24h}`;
+  }
+
+  return `${i + 1}. ${t.symbol} (${t.name})
+   - Token Address: ${t.address}
+   - Price: $${t.price?.toFixed(8) || 'N/A'}
+   - Market Cap: $${t.mc?.toLocaleString() || 'N/A'}
+   - Liquidity: $${t.liquidity?.toLocaleString() || 'N/A'}
+   - 24h Volume: $${t.v24hUSD?.toLocaleString() || 'N/A'}
+   - 24h Change: ${t.priceChange24h?.toFixed(2) || 'N/A'}%
+   - Rank: #${t.rank || 'N/A'}${bitQueryInfo}`;
+}).join('\n\n') : 'No trending tokens found'}
 
 🚨🚨🚨 CRITICAL RULES - BREAKING THESE WILL CAUSE TRADE FAILURES 🚨🚨🚨
 
 1. **ONLY USE TOKENS FROM THE LISTS ABOVE**: You MUST choose a token from either:
    - The "Top Trending Tokens (Pump.fun)" list above
-   - The "NEW Solana Pairs from DexScreener" list above
+   - The "NEW TOKEN LISTINGS FROM BIRDEYE" list above
+   - The "TRENDING TOKENS FROM BIRDEYE" list above
    - Your current "TOKEN HOLDINGS" (for SELL only)
 
 2. **NEVER MAKE UP TOKEN ADDRESSES**: Do NOT create, guess, or hallucinate token mint addresses!
@@ -686,12 +726,17 @@ ${pairAnalysis.map((analysis, i) => {
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Analyze these tokens AND new pairs using your trading expertise and decide:
+Analyze these tokens from Pump.fun, Birdeye new listings, and Birdeye trending tokens using your trading expertise and decide:
 1. SELL a token from your portfolio (if you have holdings with good profit or to cut losses)
 2. BUY a specific token (provide which one and how much SOL)
 3. HOLD (only if genuinely no opportunities)
 
 PRIORITY: If you have token holdings, FIRST consider if any should be sold before looking for new buys!
+
+BIRDEYE ADVANTAGE:
+- NEW TOKEN LISTINGS: Freshly launched tokens = earliest entry opportunity
+- TRENDING TOKENS: High momentum tokens with proven volume and price action
+- QUALITY SCORES: Pre-analyzed with liquidity, volume, and market cap metrics
 
 AGGRESSIVE TRADING REQUIREMENTS:
 - CRITICAL: MINIMUM TRADE AMOUNT IS ${this.config.minTradeAmountSOL} SOL - NEVER suggest amounts below this!
@@ -700,8 +745,8 @@ AGGRESSIVE TRADING REQUIREMENTS:
 - If usable balance < minimum trade amount, output "hold" action
 - SELL STRATEGY: Take profits early and often! Even small gains are wins. Don't be greedy.
 - SELL SIGNALS: Consider selling if token value increased, volume dropping, or new better opportunities
-- TIMING (BUY): Enter within 0-120 min of launch for maximum upside
-- NEW PAIRS: Ultra-new pairs (<1 hour) = highest gain potential. Quality Score >30 is acceptable.
+- NEW LAUNCHES: Birdeye new listings show recently launched tokens - early entry advantage
+- TRENDING MOMENTUM: Birdeye trending shows tokens with active price movement and volume
 - LIQUIDITY: Minimum $5K USD liquidity is sufficient. Higher is better but not required.
 - STOP LOSS: Plan -40% exit to allow for volatility and swing potential
 - VOLUME: Any volume activity indicates opportunity. Don't wait for perfection.
