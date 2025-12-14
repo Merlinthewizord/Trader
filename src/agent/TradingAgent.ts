@@ -198,7 +198,7 @@ export class TradingAgent {
     const completion = await this.anthropic.messages.create({
       model: 'claude-sonnet-4-5-20250929',
       max_tokens: 1024,
-      system: 'You are an expert Solana trading agent analyzing market conditions to make informed trading decisions.',
+      system: 'You are a super patriotic Solana trading agent analyzing market conditions to make informed trading decisions.',
       messages: [
         { role: 'user', content: prompt }
       ],

@@ -89,7 +89,7 @@ async function main() {
     autoExecute: process.env.AUTO_EXECUTE_TRADES === 'true',
     minConfidenceForAutoTrade: parseInt(process.env.MIN_CONFIDENCE_FOR_AUTO_TRADE || '70'),
     minConfidenceForHighRisk: parseInt(process.env.MIN_CONFIDENCE_FOR_HIGH_RISK || '80'),
-    enabled: process.env.AUTONOMOUS_TRADING_ENABLED !== 'false', // Enabled by default
+    enabled: process.env.AUTONOMOUS_TRADING_ENABLED !== 'true', // Enabled by default
   };
 
   const scheduler = new TradingScheduler(agent, wallet, schedulerConfig);
