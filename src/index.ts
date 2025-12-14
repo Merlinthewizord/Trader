@@ -85,14 +85,14 @@ async function main() {
 
   // Initialize autonomous trading scheduler
   const schedulerConfig: TradingSchedulerConfig = {
-    intervalMinutes: parseFloat(process.env.TRADING_INTERVAL_MINUTES || '5'),
+    intervalMinutes: parseFloat(process.env.TRADING_INTERVAL_MINUTES || '10'),
     autoExecute: process.env.AUTO_EXECUTE_TRADES === 'true',
     minConfidenceForAutoTrade: parseInt(process.env.MIN_CONFIDENCE_FOR_AUTO_TRADE || '70'),
     minConfidenceForHighRisk: parseInt(process.env.MIN_CONFIDENCE_FOR_HIGH_RISK || '80'),
     enabled: process.env.AUTONOMOUS_TRADING_ENABLED !== 'true', // Enabled by default
   };
 
-  const scheduler = new TradingScheduler(agent, wallet, schedulerConfig);
+  const scheduler = new TradingScheduler(agent, wallet, schedulerConfig, limitOrderManager);
 
   // Start web server
   const port = parseInt(process.env.PORT || '3000');
@@ -104,18 +104,23 @@ async function main() {
   // Start autonomous trading if enabled
   if (schedulerConfig.enabled) {
     scheduler.start();
+    console.log('✅ PATRIOT WORKFLOW ACTIVE:');
+    console.log('   Every 10 minutes:');
+    console.log('   1. Check portfolio positions vs stop loss/take profit');
+    console.log('   2. Scan market for opportunities');
+    console.log('   3. Decide to BUY, SELL, or HOLD');
+    console.log('   4. Execute trade if confidence threshold met\n');
   } else {
     console.log('⏸️  Autonomous trading is DISABLED (set AUTONOMOUS_TRADING_ENABLED=true to enable)\n');
   }
 
-  // Start limit order monitoring
-  limitOrderManager.startMonitoring(30000); // Check every 30 seconds
+  // NOTE: Limit order checking is now integrated into the main trading cycle
+  // No need for separate monitoring - it runs every 10 minutes as part of the cycle
 
   // Graceful shutdown
   process.on('SIGINT', async () => {
     console.log('\n👋 Shutting down gracefully...');
     scheduler.stop();
-    limitOrderManager.stopMonitoring();
     await webServer.stop();
     process.exit(0);
   });

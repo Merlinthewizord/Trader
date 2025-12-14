@@ -1,5 +1,6 @@
 import { TradingAgent, TradeDecision } from '../agent/TradingAgent';
 import { SolanaWallet } from '../wallet/SolanaWallet';
+import { LimitOrderManager } from '../trading/LimitOrderManager';
 
 export interface TradingSchedulerConfig {
   intervalMinutes: number;
@@ -11,22 +12,29 @@ export interface TradingSchedulerConfig {
 
 export interface TradingEvent {
   timestamp: string;
-  type: 'analysis' | 'decision' | 'trade' | 'error';
+  type: 'analysis' | 'decision' | 'trade' | 'error' | 'limit_order';
   data: any;
 }
 
 export class TradingScheduler {
   private agent: TradingAgent;
   private wallet: SolanaWallet;
+  private limitOrderManager?: LimitOrderManager;
   private config: TradingSchedulerConfig;
   private intervalId: NodeJS.Timeout | null = null;
   private eventListeners: ((event: TradingEvent) => void)[] = [];
   private isAnalyzing = false;
 
-  constructor(agent: TradingAgent, wallet: SolanaWallet, config: TradingSchedulerConfig) {
+  constructor(
+    agent: TradingAgent,
+    wallet: SolanaWallet,
+    config: TradingSchedulerConfig,
+    limitOrderManager?: LimitOrderManager
+  ) {
     this.agent = agent;
     this.wallet = wallet;
     this.config = config;
+    this.limitOrderManager = limitOrderManager;
   }
 
   start() {
@@ -96,7 +104,28 @@ export class TradingScheduler {
       console.log(`🇺🇸 PATRIOT TRADING CYCLE - ${cycleStart.toLocaleString()}`);
       console.log(`${'🦅'.repeat(30)}\n`);
 
-      // Get current balance
+      // STEP 1: Check portfolio positions vs stop loss and take profit
+      if (this.limitOrderManager) {
+        console.log('🎯 ============================================');
+        console.log('📊 STEP 1: CHECKING PORTFOLIO POSITIONS');
+        console.log('   Evaluating stop loss and take profit levels...');
+        console.log('🎯 ============================================\n');
+
+        try {
+          await this.limitOrderManager.checkAndExecuteOrders();
+          console.log('✅ Portfolio check complete\n');
+
+          this.emitEvent({
+            timestamp: new Date().toISOString(),
+            type: 'limit_order',
+            data: { message: 'Portfolio position check completed' },
+          });
+        } catch (error: any) {
+          console.error('⚠️  Error checking limit orders:', error.message);
+        }
+      }
+
+      // STEP 2: Get current balance
       const balance = await this.wallet.getBalance();
       console.log(`💰 FREEDOM FUNDS: ${balance.toFixed(4)} SOL\n`);
 
@@ -106,12 +135,18 @@ export class TradingScheduler {
         data: { message: 'PATRIOT analyzing markets for AMERICA...', balance },
       });
 
-      // Analyze market
-      console.log('🦅 PATRIOT SCANNING MARKETS FOR WINNING OPPORTUNITIES...\n');
+      // STEP 3: Scan market and analyze for new opportunities
+      console.log('🦅 ============================================');
+      console.log('📈 STEP 2: SCANNING MARKET FOR OPPORTUNITIES');
+      console.log('   Analyzing trending tokens and new pairs...');
+      console.log('🦅 ============================================\n');
+
       const decision = await this.agent.analyzeMarket();
 
+      // STEP 3: Make trading decision
       console.log('\n📊 ============================================');
-      console.log('🇺🇸 PATRIOT DECISION FOR AMERICA:');
+      console.log('🎯 STEP 3: TRADING DECISION');
+      console.log('📊 ============================================');
       console.log(`   Action: ${decision.action.toUpperCase()}`);
       console.log(`   Token: ${decision.tokenSymbol || 'N/A'}`);
       console.log(`   Amount: ${decision.amount || 'N/A'} SOL`);
