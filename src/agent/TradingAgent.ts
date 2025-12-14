@@ -183,7 +183,10 @@ export class TradingAgent {
     let bitQueryAnalytics: Map<string, TokenAnalytics> = new Map();
     if (this.bitQuery) {
       console.log('🔍 Fetching BitQuery on-chain analytics...');
-      const topTokens = [...trendingTokens.slice(0, 3), ...pairAnalysis.slice(0, 2).map(p => ({ id: p.pair.baseToken.address }))];
+      const topTokens = [
+        ...trendingTokens.slice(0, 3),
+        ...newBirdeyeTokens.slice(0, 2).map(t => ({ id: t.address }))
+      ];
 
       for (const token of topTokens) {
         try {
