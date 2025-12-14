@@ -267,15 +267,25 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
     try {
       // CRITICAL: Validate token exists before attempting to trade
       if (decision.action === 'buy') {
-        console.log(`🔍 Validating token ${decision.tokenSymbol} (${decision.tokenMint}) exists...`);
+        console.log(`\n🦅 ============================================`);
+        console.log(`🔍 PATRIOT VALIDATING TOKEN FOR AMERICA`);
+        console.log(`   Token: ${decision.tokenSymbol}`);
+        console.log(`   Address: ${decision.tokenMint}`);
+        console.log(`🦅 ============================================\n`);
+
         try {
           const tokenInfo = await this.pumpFun.getTokenInfo(decision.tokenMint);
           if (!tokenInfo) {
-            throw new Error(`Token ${decision.tokenSymbol} (${decision.tokenMint}) does not exist or is not tradeable!`);
+            throw new Error(`Token ${decision.tokenSymbol} does not exist or is not tradeable!`);
           }
-          console.log(`✅ Token validated: ${tokenInfo.symbol} - $${tokenInfo.usdPrice?.toFixed(6) || 'N/A'}`);
+          console.log(`✅ TOKEN VALIDATED - AMERICA APPROVES!`);
+          console.log(`   Symbol: ${tokenInfo.symbol}`);
+          console.log(`   Price: $${tokenInfo.usdPrice?.toFixed(6) || 'N/A'}\n`);
         } catch (error: any) {
-          throw new Error(`Cannot trade ${decision.tokenSymbol}: Token validation failed - ${error.message}. This token may not exist or may not be tradeable on pump.fun.`);
+          console.error(`❌ REJECTED BY PATRIOT - INVALID TOKEN!`);
+          console.error(`   Reason: ${error.message}`);
+          console.error(`   This token is NOT AMERICAN ENOUGH (not tradeable on pump.fun)\n`);
+          throw new Error(`Cannot trade ${decision.tokenSymbol}: ${error.message}`);
         }
       }
 
@@ -328,7 +338,12 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
         }
       }
 
-      console.log(`💰 Executing ${decision.action.toUpperCase()} ${decision.action === 'sell' && sellAllTokens ? `ALL ${tradeAmount} tokens` : `with ${tradeAmount.toFixed(4)} SOL`} (original: ${decision.amount})`);
+      console.log(`\n💰 ============================================`);
+      console.log(`🇺🇸 EXECUTING ${decision.action.toUpperCase()} ORDER FOR AMERICA`);
+      console.log(`   Token: ${decision.tokenSymbol}`);
+      console.log(`   Amount: ${decision.action === 'sell' && sellAllTokens ? `ALL ${tradeAmount} tokens` : `${tradeAmount.toFixed(4)} SOL`}`);
+      console.log(`   Slippage: ${this.config.slippageBPS / 100}%`);
+      console.log(`💰 ============================================\n`);
 
       const signature =
         decision.action === 'buy'
@@ -344,6 +359,12 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
               denominatedInSol: sellAllTokens ? false : true, // If selling all tokens, specify in tokens not SOL
               slippage: this.config.slippageBPS,
             });
+
+      console.log(`\n🎆 ============================================`);
+      console.log(`✅ TRADE SUCCESSFUL - AMERICA WINS AGAIN!`);
+      console.log(`   Transaction: ${signature.substring(0, 20)}...`);
+      console.log(`   View: https://solscan.io/tx/${signature}`);
+      console.log(`🎆 ============================================\n`);
 
       // Create limit orders after successful BUY
       if (decision.action === 'buy' && this.limitOrderManager && decision.tokenMint && decision.tokenSymbol) {
@@ -384,7 +405,20 @@ Be conversational, informative, and strategic. Always explain your reasoning cle
 
       return signature;
     } catch (error: any) {
-      console.error('Trade execution failed:', error.message);
+      console.error(`\n❌ ============================================`);
+      console.error(`💥 TRADE FAILED - UN-AMERICAN ERROR!`);
+      console.error(`   Token: ${decision.tokenSymbol}`);
+      console.error(`   Action: ${decision.action.toUpperCase()}`);
+      console.error(`   Error: ${error.message}`);
+
+      // Check for common wallet issues
+      if (error.message.includes('400') || error.message.includes('Request failed')) {
+        console.error(`\n⚠️  WALLET CONFIGURATION REQUIRED:`);
+        console.error(`   Your wallet private key may not be set up!`);
+        console.error(`   Check .env file: SOLANA_PRIVATE_KEY`);
+      }
+
+      console.error(`❌ ============================================\n`);
 
       // Log failed trade attempt
       await this.memory.updateTradeOutcome(

@@ -92,31 +92,33 @@ export class TradingScheduler {
 
     try {
       const cycleStart = new Date();
-      console.log(`\n${'='.repeat(60)}`);
-      console.log(`🔄 TRADING CYCLE STARTED - ${cycleStart.toLocaleString()}`);
-      console.log(`${'='.repeat(60)}\n`);
+      console.log(`\n${'🦅'.repeat(30)}`);
+      console.log(`🇺🇸 PATRIOT TRADING CYCLE - ${cycleStart.toLocaleString()}`);
+      console.log(`${'🦅'.repeat(30)}\n`);
 
       // Get current balance
       const balance = await this.wallet.getBalance();
-      console.log(`💰 Current balance: ${balance.toFixed(4)} SOL`);
+      console.log(`💰 FREEDOM FUNDS: ${balance.toFixed(4)} SOL\n`);
 
       this.emitEvent({
         timestamp: cycleStart.toISOString(),
         type: 'analysis',
-        data: { message: 'Starting market analysis...', balance },
+        data: { message: 'PATRIOT analyzing markets for AMERICA...', balance },
       });
 
       // Analyze market
-      console.log('🔍 Analyzing market conditions...');
+      console.log('🦅 PATRIOT SCANNING MARKETS FOR WINNING OPPORTUNITIES...\n');
       const decision = await this.agent.analyzeMarket();
 
-      console.log('\n📊 TRADING DECISION:');
+      console.log('\n📊 ============================================');
+      console.log('🇺🇸 PATRIOT DECISION FOR AMERICA:');
       console.log(`   Action: ${decision.action.toUpperCase()}`);
       console.log(`   Token: ${decision.tokenSymbol || 'N/A'}`);
       console.log(`   Amount: ${decision.amount || 'N/A'} SOL`);
       console.log(`   Confidence: ${decision.confidence}%`);
-      console.log(`   Risk: ${decision.riskLevel}`);
-      console.log(`   Reasoning: ${decision.reasoning}`);
+      console.log(`   Risk Level: ${decision.riskLevel}`);
+      console.log(`   PATRIOT's Analysis: ${decision.reasoning}`);
+      console.log('📊 ============================================\n');
 
       this.emitEvent({
         timestamp: new Date().toISOString(),
